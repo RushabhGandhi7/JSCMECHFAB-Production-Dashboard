@@ -1,0 +1,291 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* ─── Cards ─────────────────────────────────────────────────────────────────── */
+.industrial-card {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.industrial-card-hover {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.industrial-card-hover:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+  transform: translateY(-1px);
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────────────── */
+.industrial-label {
+  color: #64748b;
+  font-size: 0.70rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.industrial-value {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* ─── Progress ───────────────────────────────────────────────────────────────── */
+.industrial-progress-track {
+  height: 0.6rem;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.industrial-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+/* ─── Button System ──────────────────────────────────────────────────────────── */
+
+/* Primary — blue */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transform: translateY(-1px);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Success — green */
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #16a34a;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.btn-success:hover:not(:disabled) {
+  background: #15803d;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  transform: translateY(-1px);
+}
+.btn-success:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Danger — red */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #ef4444;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary — white/outline */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dispatch / violet */
+.btn-dispatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #7c3aed;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 1px 2px rgba(124, 58, 237, 0.2);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.btn-dispatch:hover:not(:disabled) {
+  background: #6d28d9;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  transform: translateY(-1px);
+}
+.btn-dispatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Icon-only danger button */
+.btn-icon-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff1f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 0.4rem;
+  transition: background 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.btn-icon-danger:hover:not(:disabled) {
+  background: #fee2e2;
+  transform: scale(1.05);
+}
+
+/* ─── Table ──────────────────────────────────────────────────────────────────── */
+.erp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.erp-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+.erp-table thead th {
+  padding: 0.75rem 1rem;
+  font-size: 0.70rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #64748b;
+  text-align: left;
+}
+.erp-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.12s ease;
+}
+.erp-table tbody tr:hover {
+  background: #f8fafc;
+}
+.erp-table tbody td {
+  padding: 0.75rem 1rem;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+/* ─── Modal ──────────────────────────────────────────────────────────────────── */
+.erp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(2px);
+  padding: 1rem;
+}
+.erp-modal {
+  background: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 28rem;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────────── */
+.erp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1rem;
+  text-align: center;
+}
+.erp-empty-icon {
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+}
+.erp-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #475569;
+}
+.erp-empty-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
