@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:strict": "NODE_ENV=development next dev",
+    "postinstall": "prisma generate",
     "build": "next build",
     "build:analyze": "next build",
     "start": "next start",
