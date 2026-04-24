@@ -128,5 +128,5 @@ export async function updateProjectStage(
     // ── Recompute project-level status ──────────────────────────────────────
     await recomputeProjectStatus(updated.projectId, tx);
     return updated;
-  });
+  }, { maxWait: 5000, timeout: 20000 });
 }

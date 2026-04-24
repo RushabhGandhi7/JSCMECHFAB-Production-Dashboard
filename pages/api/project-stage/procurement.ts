@@ -89,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         return { entry, stageDetails: updatedDetails };
-      });
+      }, { maxWait: 5000, timeout: 20000 });
 
       return ok(res, result);
     },

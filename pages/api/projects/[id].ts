@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
           });
           return p;
-        });
+        }, { maxWait: 5000, timeout: 20000 });
 
         if (!updated) return fail(res, "Project not found", 404);
         return ok(res, { deleted: true });

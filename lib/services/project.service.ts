@@ -190,7 +190,7 @@ export async function createProject(input: {
     });
 
     return { ...project, metrics: calculateProjectMetrics(project) };
-  });
+  }, { maxWait: 5000, timeout: 20000 });
 }
 
 export async function updateProjectTimeline(input: {
@@ -254,7 +254,7 @@ export async function updateProjectTimeline(input: {
     const fresh = await tx.project.findUnique({ where: { id: updated.id }, include: projectInclude });
     if (!fresh) throw new Error("Project not found after update");
     return { ...fresh, metrics: calculateProjectMetrics(fresh) };
-  });
+  }, { maxWait: 5000, timeout: 20000 });
 }
 
 export async function recomputeProjectStatus(
@@ -324,5 +324,5 @@ export async function dispatchProject(id: string) {
     });
 
     return updated;
-  });
+  }, { maxWait: 5000, timeout: 20000 });
 }
