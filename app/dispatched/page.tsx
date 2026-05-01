@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PackageCheck, Download, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { PackageCheck, Download, Trash2, Filter, Calendar } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Toast } from "@/components/Toast";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -24,12 +24,47 @@ function fmtDate(iso: string | null | undefined) {
   return new Date(iso).toLocaleDateString();
 }
 
+/** Returns "YYYY-MM" string from an ISO date, or null. */
+function toYearMonth(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** "2026-04" → "Apr 2026" */
+function fmtYearMonth(ym: string) {
+  const [y, m] = ym.split("-");
+  return `${new Date(Number(y), Number(m) - 1).toLocaleString(undefined, { month: "long" })} ${y}`;
+}
+
+function buildExcelRows(rows: DispatchedRow[]) {
+  return rows.map((r) => ({
+    "Project No":       r.projectNo,
+    "Description":      r.equipmentType,
+    "Client":           r.client?.name ?? r.clientName,
+    "Start Date":       fmtDate(r.createdAt),
+    "Dispatch Date":    fmtDate(r.dispatchedAt),
+    "Total Days Taken": r.completionDays ?? "—",
+    "Status":           r.status,
+  }));
+}
+
+function downloadXlsx(data: ReturnType<typeof buildExcelRows>, filename: string) {
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Dispatched Projects");
+  XLSX.writeFile(wb, filename);
+}
+
 export default function DispatchedPage() {
   const [rows, setRows] = useState<DispatchedRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // ── Dispatch month filter ─────────────────────────────────────────────────
+  const [filterMonth, setFilterMonth] = useState<string>(""); // "YYYY-MM" or ""
 
   async function load() {
     setLoading(true);
@@ -50,20 +85,43 @@ export default function DispatchedPage() {
 
   useEffect(() => { load(); }, []);
 
-  function handleExport() {
-    const data = rows.map((r) => ({
-      "Project Number": r.projectNo,
-      "Description": r.equipmentType,
-      "Client": r.client?.name ?? r.clientName,
-      "Created Date": fmtDate(r.createdAt),
-      "Dispatched Date": fmtDate(r.dispatchedAt),
-      "Completion Days": r.completionDays ?? "—",
-      "Status": r.status,
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dispatched Projects");
-    XLSX.writeFile(wb, "dispatched_projects.xlsx");
+  // ── Derived: unique months for dropdown ──────────────────────────────────
+  const uniqueMonths = useMemo(() => {
+    const months = new Set<string>();
+    rows.forEach((r) => {
+      const ym = toYearMonth(r.dispatchedAt);
+      if (ym) months.add(ym);
+    });
+    return Array.from(months).sort().reverse();
+  }, [rows]);
+
+  // ── Filtered rows ─────────────────────────────────────────────────────────
+  const filteredRows = useMemo(() => {
+    if (!filterMonth) return rows;
+    return rows.filter((r) => toYearMonth(r.dispatchedAt) === filterMonth);
+  }, [rows, filterMonth]);
+
+  // ── Export handlers ───────────────────────────────────────────────────────
+  function handleExportMonthly() {
+    if (!filterMonth) {
+      setToast({ kind: "error", message: "Select a month filter first to export monthly report." });
+      return;
+    }
+    const data = buildExcelRows(filteredRows);
+    downloadXlsx(data, `dispatched_${filterMonth}.xlsx`);
+  }
+
+  function handleExportYearly() {
+    const year = new Date().getFullYear();
+    const yearRows = rows.filter((r) => {
+      if (!r.dispatchedAt) return false;
+      return new Date(r.dispatchedAt).getFullYear() === year;
+    });
+    downloadXlsx(buildExcelRows(yearRows), `dispatched_${year}.xlsx`);
+  }
+
+  function handleExportAll() {
+    downloadXlsx(buildExcelRows(rows), `dispatched_till_date.xlsx`);
   }
 
   async function handleDelete() {
@@ -109,14 +167,37 @@ export default function DispatchedPage() {
             </h1>
             <p className="mt-1 text-sm text-slate-500">Completed and dispatched production orders — Admin view.</p>
           </div>
-          <button
-            onClick={handleExport}
-            disabled={rows.length === 0}
-            className="btn-success"
-          >
-            <Download className="h-4 w-4" />
-            Export to Excel
-          </button>
+
+          {/* Export buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleExportMonthly}
+              disabled={rows.length === 0}
+              className="btn-success text-sm"
+              title="Export selected month"
+            >
+              <Download className="h-4 w-4" />
+              Monthly
+            </button>
+            <button
+              onClick={handleExportYearly}
+              disabled={rows.length === 0}
+              className="btn-success text-sm"
+              title="Export current year"
+            >
+              <Download className="h-4 w-4" />
+              Yearly
+            </button>
+            <button
+              onClick={handleExportAll}
+              disabled={rows.length === 0}
+              className="btn-success text-sm"
+              title="Export all records"
+            >
+              <Download className="h-4 w-4" />
+              Till Date
+            </button>
+          </div>
         </div>
       </header>
 
@@ -140,16 +221,51 @@ export default function DispatchedPage() {
         </article>
       </section>
 
+      {/* Month filter bar */}
+      {!loading && rows.length > 0 && (
+        <section className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <Filter className="h-4 w-4 shrink-0 text-slate-500" />
+          <span className="text-sm font-semibold text-slate-700">Filter by month:</span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilterMonth("")}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                !filterMonth ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              All Months
+            </button>
+            {uniqueMonths.map((ym) => (
+              <button
+                key={ym}
+                onClick={() => setFilterMonth(ym)}
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors ${
+                  filterMonth === ym ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Calendar className="h-3 w-3" />
+                {fmtYearMonth(ym)}
+              </button>
+            ))}
+          </div>
+          {filterMonth && (
+            <span className="ml-auto text-xs text-slate-500">
+              Showing <strong>{filteredRows.length}</strong> of {rows.length} records
+            </span>
+          )}
+        </section>
+      )}
+
       {/* Table */}
       {loading ? (
         <div className="industrial-card rounded-xl p-8">
           <LoadingSpinner label="Loading dispatched projects..." />
         </div>
-      ) : rows.length === 0 ? (
+      ) : filteredRows.length === 0 ? (
         <div className="industrial-card rounded-xl">
           <div className="erp-empty">
             <PackageCheck className="erp-empty-icon h-12 w-12" />
-            <p className="erp-empty-title">No dispatched projects yet</p>
+            <p className="erp-empty-title">{filterMonth ? `No projects dispatched in ${fmtYearMonth(filterMonth)}` : "No dispatched projects yet"}</p>
             <p className="erp-empty-sub">Projects appear here once marked as Dispatched from the project detail page.</p>
           </div>
         </div>
@@ -158,18 +274,18 @@ export default function DispatchedPage() {
           <table className="erp-table">
             <thead>
               <tr>
-                <th>Project Number</th>
+                <th>Project No</th>
                 <th>Description</th>
                 <th>Client</th>
-                <th>Created Date</th>
-                <th>Dispatched Date</th>
-                <th>Completion Days</th>
+                <th>Start Date</th>
+                <th>Dispatch Date</th>
+                <th>Total Days</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {filteredRows.map((r) => (
                 <tr key={r.id}>
                   <td className="font-mono font-bold text-slate-900">{r.projectNo}</td>
                   <td className="max-w-xs truncate text-slate-700">{r.equipmentType}</td>

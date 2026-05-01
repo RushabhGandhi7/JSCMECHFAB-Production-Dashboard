@@ -3,7 +3,7 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle, CheckCircle, ChevronDown, ChevronUp,
-  ClipboardList, Gauge, Hammer, History,
+  ClipboardList, Gauge, Hammer, History, MessageSquare,
   Package, Pencil, Plus, Save, Settings, Timer, Truck, Trash, Wrench
 } from "lucide-react";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -43,12 +43,12 @@ const PRODUCTION_TIMELINE_SEGMENTS = [
   { label: "Dispatch",         startDay: 26, endDay: 28, matchKey: "dispatch"    }
 ] as const;
 
-/** Gantt bar colour class based on segment status. */
+/** Gantt bar gradient class based on segment status. */
 const GANTT_COLOURS = {
-  completed:   "bg-green-500",
-  in_progress: "bg-blue-500",
-  delayed:     "bg-red-500",
-  upcoming:    "bg-slate-300"
+  completed:   "bg-gradient-to-r from-green-400 to-green-600",
+  in_progress: "bg-gradient-to-r from-blue-400 to-blue-600",
+  delayed:     "bg-gradient-to-r from-red-400 to-red-600",
+  upcoming:    "bg-slate-200"
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -67,7 +67,7 @@ interface ProcurementEntry {
 
 type SegStatus = "completed" | "delayed" | "in_progress" | "upcoming";
 
-type DetailType = "drawing" | "procurement" | "cutting" | null;
+type DetailType = "drawing" | "procurement" | "cutting" | "machining" | null;
 
 type ProjectPayload = any;
 
@@ -147,7 +147,8 @@ function getDetailType(stageName: string): DetailType {
   const n = stageName.toLowerCase();
   if (n.includes("drawing") || n.includes("design")) return "drawing";
   if (n.includes("procurement"))                     return "procurement";
-  if (n.includes("cutting") || n.includes("machining") || n.includes("bending")) return "cutting";
+  if (n.includes("machining"))                       return "machining";  // independent stage
+  if (n.includes("cutting") || n.includes("bending")) return "cutting";
   return null;
 }
 
@@ -211,6 +212,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   /** Index into PRODUCTION_TIMELINE_SEGMENTS whose Gantt bar is being hovered. */
   const [hoveredGanttIdx, setHoveredGanttIdx] = useState<number | null>(null);
 
+  // ── Remarks state ─────────────────────────────────────────────────────────
+  const [remarks, setRemarks]               = useState<any[]>([]);
+  const [remarkText, setRemarkText]         = useState("");
+  const [remarkStageId, setRemarkStageId]   = useState("");
+  const [submittingRemark, setSubmittingRemark] = useState(false);
+
+  // ── Procurement items (from new relational table) ───────────────────────
+  const [procItems, setProcItems]           = useState<any[]>([]);
+  const [procExpanded, setProcExpanded]     = useState<string | null>(null);
+
+  // ── Electrical panels state ─────────────────────────────────────────
+  const [panels, setPanels]                 = useState<any[]>([]);
+  const [panelForm, setPanelForm]           = useState({ panelName: "", assignedTo: "", remarks: "" });
+  const [addingPanel, setAddingPanel]       = useState(false);
+  const [panelFormOpen, setPanelFormOpen]   = useState(false);
+
   // ── Data fetching ──────────────────────────────────────────────────────────
   async function load(projectId: string) {
     try {
@@ -226,12 +243,72 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => { load(id); }, [id]);
 
+  async function loadRemarks(projectId: string) {
+    try {
+      const r = await fetch(`/api/remarks?projectId=${projectId}`);
+      const p = await r.json();
+      if (p.success) setRemarks(p.data.reverse()); // latest first
+    } catch {}
+  }
+
+  async function loadProcItems(projectId: string) {
+    try {
+      const r = await fetch(`/api/procurement?projectId=${projectId}`);
+      const p = await r.json();
+      if (p.success) setProcItems(p.data);
+    } catch {}
+  }
+
+  async function loadPanels(projectId: string) {
+    try {
+      const r = await fetch(`/api/electrical-panels?projectId=${projectId}`);
+      const p = await r.json();
+      if (p.success) setPanels(p.data);
+    } catch {}
+  }
+
+  async function submitRemark() {
+    if (!remarkText.trim() || !project) return;
+    setSubmittingRemark(true);
+    try {
+      const body: Record<string, string> = { projectId: project.id, message: remarkText.trim() };
+      if (remarkStageId) body.projectStageId = remarkStageId;
+      const r = await fetch("/api/remarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const p = await r.json();
+      if (p.success) {
+        setRemarkText("");
+        setRemarkStageId("");
+        setToast({ kind: "success", message: "Remark submitted" });
+        loadRemarks(project.id);
+      } else {
+        setToast({ kind: "error", message: p.message ?? "Failed to submit remark" });
+      }
+    } catch (e) {
+      setToast({ kind: "error", message: "Failed to submit remark" });
+    }
+    setSubmittingRemark(false);
+}
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((p) => { if (p?.success) setMe(p.data); })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (project?.id) {
+      loadRemarks(project.id);
+      loadProcItems(project.id);
+      loadPanels(project.id);
+    }
+  }, [project?.id]);
+
+
 
   // Sync all form controls when project refreshes.
   // selectedStageId is listed as a dependency to avoid stale-closure bugs
@@ -462,6 +539,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <p className="font-mono text-2xl font-black text-cyan-700">{project.metrics.totalProgress.toFixed(1)}%</p>
                 <div className="mt-1"><StatusBadge value={project.status} /></div>
               </div>
+              {/* Admin-only: Total procurement weight */}
+              {me?.role === "ADMIN" && procItems.some((i: any) => i.weightKg) && (
+                <div>
+                  <p className="industrial-label">Total Weight</p>
+                  <p className="font-mono text-2xl font-black text-emerald-700">
+                    {procItems.reduce((s: number, i: any) => s + (i.weightKg ?? 0), 0).toFixed(1)}{" "}
+                    <span className="text-sm font-semibold text-emerald-600">kg</span>
+                  </p>
+                  <p className="mt-0.5 text-[0.65rem] text-slate-400">
+                    Rcvd: {procItems.filter((i: any) => i.status === "RECEIVED").reduce((s: number, i: any) => s + (i.weightKg ?? 0), 0).toFixed(1)} kg
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex shrink-0 items-center gap-3">
@@ -610,7 +700,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         <span className="w-36 shrink-0 text-right text-xs font-semibold text-slate-600 leading-tight">{bar.label}</span>
 
                         {/* Bar track — overflow-hidden clips bars; tooltip is a sibling outside */}
-                        <div className="relative h-7 flex-1 overflow-hidden rounded bg-slate-100">
+                        <div className="relative h-9 flex-1 overflow-hidden rounded-md bg-slate-100">
                           {/* Segment bar */}
                           <div
                             className={`absolute top-1 bottom-1 rounded ${GANTT_COLOURS[bar.segStatus]} opacity-90 transition-all duration-500`}
@@ -689,7 +779,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <Gauge className="h-5 w-5 text-cyan-700" />
               Production Stages
             </h2>
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
               {project.stages.map((stage: any) => {
                 const active     = stage.id === selectedStageId;
                 const justSaved  = changedStageId === stage.id;
@@ -699,9 +789,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     key={stage.id}
                     type="button"
                     onClick={() => selectStage(stage)}
-                    className={`rounded-lg border border-l-4 p-4 text-left transition-all duration-300 hover:scale-[1.01]
-                      ${active    ? "border-cyan-500 bg-cyan-50" : "border-slate-200 bg-white"}
-                      ${justSaved ? "ring-2 ring-green-400 ring-offset-2 shadow-lg shadow-green-100" : ""}
+                    className={`flex flex-col rounded-xl border-2 border-l-4 p-4 text-left transition-all duration-200 hover:shadow-md min-h-[120px]
+                      ${active    ? "border-cyan-400 bg-cyan-50 shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"}
+                      ${justSaved ? "ring-2 ring-green-400 ring-offset-2 shadow-lg" : ""}
                       ${statusLeftBorder(stage.status, stage.isDelayed || !!stage.delayReason)}`}
                   >
                     <div className="mb-2 flex items-center justify-between">
@@ -733,71 +823,91 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             {/* ── PROCUREMENT: summary + log ─────────────────────────────── */}
             {detailType === "procurement" ? (
               <div className="space-y-4">
-                {/* Summary cards */}
+                {/* KPI strip */}
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: "Total Ordered",  value: procSummary.totalOrdered,  cls: "border-blue-200 bg-blue-50",  txt: "text-blue-700" },
-                    { label: "Total Received", value: procSummary.totalReceived, cls: "border-green-200 bg-green-50", txt: "text-green-700" },
-                    { label: "Pending",        value: procSummary.pending,       cls: procSummary.pending > 0 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white", txt: procSummary.pending > 0 ? "text-amber-600" : "text-slate-700" }
+                    { label: "Total Items",    value: procItems.length,                                         cls: "border-blue-200 bg-blue-50",   txt: "text-blue-700"  },
+                    { label: "Received",       value: procItems.filter((i:any) => i.status==="RECEIVED").length, cls: "border-green-200 bg-green-50", txt: "text-green-700" },
+                    { label: "Pending/Ordered",value: procItems.filter((i:any) => i.status!=="RECEIVED").length, cls: "border-amber-200 bg-amber-50",  txt: "text-amber-700" },
                   ].map(({ label, value, cls, txt }) => (
                     <div key={label} className={`rounded-xl border p-3 text-center ${cls}`}>
                       <p className="text-[0.67rem] font-bold uppercase tracking-wider text-slate-500">{label}</p>
                       <p className={`mt-1 text-2xl font-black ${txt}`}>{value}</p>
-                      {label === "Pending" && value > 0 && (
-                        <p className="mt-0.5 text-[0.65rem] font-semibold text-amber-600">⚠ Delivery pending</p>
-                      )}
                     </div>
                   ))}
                 </div>
 
-                {/* Procurement log table */}
-                {procurementLog.length === 0 ? (
-                  <div className="erp-empty py-8">
-                    <Package className="erp-empty-icon h-10 w-10" />
-                    <p className="erp-empty-title text-sm">No material entries yet</p>
-                    <p className="erp-empty-sub">Use the Add Material Entry form to start tracking procurement.</p>
+                {/* Weight summary — admin only */}
+                {me?.role === "ADMIN" && procItems.some((i:any) => i.weightKg) && (
+                  <div className="flex flex-wrap gap-3 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2 text-sm">
+                    <span className="font-semibold text-emerald-700">Total ordered wt.: <strong>{procItems.reduce((s:number,i:any)=>s+(i.weightKg??0),0).toFixed(1)} kg</strong></span>
+                    <span className="font-semibold text-green-700">Received wt.: <strong>{procItems.filter((i:any)=>i.status==="RECEIVED").reduce((s:number,i:any)=>s+(i.weightKg??0),0).toFixed(1)} kg</strong></span>
+                  </div>
+                )}
+
+                {procItems.length === 0 ? (
+                  <div className="erp-empty py-6">
+                    <Package className="erp-empty-icon h-8 w-8" />
+                    <p className="erp-empty-title text-sm">No procurement entries</p>
+                    <p className="erp-empty-sub">Add items via the <a href="/procurement" className="text-blue-600 underline">Procurement module</a>.</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
                     <table className="min-w-full text-sm">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-50">
-                          {["Date","Material","Qty","Sheet Size","Action","Status","By"].map(h => (
-                            <th key={h} className="px-3 py-2.5 text-left text-[0.67rem] font-bold uppercase tracking-wider text-slate-500">{h}</th>
-                          ))}
+                        <tr className="border-b border-slate-100 bg-slate-50 text-left">
+                          {["Category","Material","Type","Specs","Qty",
+                            ...(me?.role==="ADMIN" ? ["Weight"] : []),
+                            "Status","Date"
+                          ].map(h =>
+                            <th key={h} className="px-3 py-2.5 text-[0.67rem] font-bold uppercase tracking-wider text-slate-500">{h}</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
-                        {[...procurementLog].reverse().map((entry, i) => (
-                          <tr key={entry.id} className={`border-t border-slate-100 ${i % 2 === 0 ? "bg-white" : "bg-slate-50/60"}`}>
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500 whitespace-nowrap">{fmtDateTime(entry.timestamp)}</td>
-                            <td className="px-3 py-2.5">
-                              <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-700">
-                                {entry.materialType}
-                              </span>
-                              <span className="ml-1.5 font-semibold text-slate-800">{entry.thickness}</span>
-                            </td>
-                            <td className="px-3 py-2.5 font-mono font-bold text-slate-900">{entry.quantity}</td>
-                            <td className="px-3 py-2.5 text-xs text-slate-600">{entry.sheetSize || "—"}</td>
-                            <td className="px-3 py-2.5">
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${entry.actionType === "ORDERED" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
-                                {entry.actionType}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${entry.status === "Received" ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-600"}`}>
-                                {entry.status}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5 text-xs text-slate-500">{entry.updatedBy}</td>
-                          </tr>
+                        {procItems.map((item: any, idx: number) => (
+                          <React.Fragment key={item.id}>
+                            <tr
+                              className={`border-t border-slate-100 cursor-pointer ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} ${item.status === "RECEIVED" ? "border-l-4 border-l-green-400" : item.status === "ORDERED" ? "border-l-4 border-l-blue-400" : "border-l-4 border-l-amber-400"}`}
+                              onClick={() => setProcExpanded(procExpanded === item.id ? null : item.id)}
+                            >
+                              <td className="px-3 py-2.5 text-xs font-bold text-slate-600">{item.category.replace("_"," ")}</td>
+                              <td className="px-3 py-2.5 font-semibold text-slate-800">{item.materialName}</td>
+                              <td className="px-3 py-2.5"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-700">{item.materialType}</span></td>
+                              <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{[item.thickness?`${item.thickness}mm`:null, item.lengthMm&&item.widthMm?`${item.lengthMm}×${item.widthMm}mm`:null].filter(Boolean).join(" · ") || "—"}</td>
+                              <td className="px-3 py-2.5 font-mono font-bold">{item.quantity} <span className="text-xs font-normal text-slate-400">{item.unit}</span></td>
+                              {me?.role==="ADMIN" && <td className="px-3 py-2.5 font-mono text-xs text-emerald-700">{item.weightKg ? `${item.weightKg} kg` : "—"}</td>}
+                              <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${item.status === "RECEIVED" ? "bg-green-100 text-green-700" : item.status === "ORDERED" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{item.status}</span></td>
+                              <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{new Date(item.createdAt).toLocaleDateString()}</td>
+                            </tr>
+                            {/* Expandable log */}
+                            {procExpanded === item.id && item.logs?.length > 0 && (
+                              <tr className="bg-slate-50">
+                                <td colSpan={8} className="px-4 py-2">
+                                  <p className="mb-1 text-[0.65rem] font-bold uppercase tracking-wider text-slate-400">Activity Log</p>
+                                  <div className="space-y-1">
+                                    {[...item.logs].reverse().map((log: any) => (
+                                      <div key={log.id} className="flex flex-wrap items-center gap-2 text-xs">
+                                        <span className="font-mono text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
+                                        <span className={`rounded-full px-2 py-0.5 font-bold ${log.action === "RECEIVED" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>{log.action}</span>
+                                        {log.newValue && <span className="rounded bg-green-50 px-1 font-mono text-green-700">{log.newValue}</span>}
+                                        <span className="ml-auto text-slate-400">by {log.updatedBy}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 )}
+                <p className="text-right text-xs text-slate-400">Read-only view — <a href="/procurement" className="text-blue-500 underline">Manage in Procurement module →</a></p>
               </div>
             ) : (
+
               /* ── Non-procurement: existing detail table ── */
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 {selectedStage && !(
@@ -1080,7 +1190,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <hr className="border-slate-200" />
                     <div>
                       <p className="industrial-label mb-3">
-                        {detailType === "drawing" ? "Drawing Details" : "Cutting & Bending Details"}
+                        {detailType === "drawing" ? "Drawing Details"
+                          : detailType === "machining" ? "Machining Details"
+                          : "Cutting & Bending Details"}
                       </p>
 
                       {detailType === "drawing" && (
@@ -1098,6 +1210,35 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               {Boolean(stageDetails[key]) && <span className="ml-auto text-xs font-bold text-green-600">✓ Done</span>}
                             </label>
                           ))}
+                        </div>
+                      )}
+
+                      {detailType === "machining" && (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600">Raw Material Used</label>
+                            <input type="text" value={(stageDetails.rawMaterial as string) || ""} placeholder="e.g. EN8 Rod, MS Flat Bar"
+                              onChange={(e) => setStageDetails(p => ({ ...p, rawMaterial: e.target.value }))}
+                              className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600">Machining Process</label>
+                            <input type="text" value={(stageDetails.machiningProcess as string) || ""} placeholder="e.g. Turning, Drilling, Milling"
+                              onChange={(e) => setStageDetails(p => ({ ...p, machiningProcess: e.target.value }))}
+                              className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600">Quantity Processed</label>
+                            <input type="number" min={0} value={(stageDetails.machinedQty as string) || ""}
+                              onChange={(e) => setStageDetails(p => ({ ...p, machinedQty: e.target.value }))}
+                              className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-600">Notes</label>
+                            <textarea rows={2} value={(stageDetails.machiningNotes as string) || ""} placeholder="Tolerances, surface finish requirements, etc."
+                              onChange={(e) => setStageDetails(p => ({ ...p, machiningNotes: e.target.value }))}
+                              className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                          </div>
                         </div>
                       )}
 
@@ -1321,12 +1462,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         </aside>
       </section>
 
-      {/* ── Delay log ──────────────────────────────────────────────────────── */}
-      <section className="industrial-card rounded-xl p-4">
-        <h2 className="mb-3 text-lg font-black text-slate-900">Delay Log</h2>
-        {delayedStages.length === 0 ? (
-          <p className="text-slate-600">No stage delays logged.</p>
-        ) : (
+      {/* ── Stage Delays (read-only) ─────────────────────────────────────── */}
+      {delayedStages.length > 0 && (
+        <section className="industrial-card rounded-xl p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-900">
+            <AlertTriangle className="h-4 w-4 text-red-500" /> Stage Delays
+          </h2>
           <div className="grid gap-2 md:grid-cols-2">
             {delayedStages.map((s: any) => (
               <div key={s.id} className="rounded-md border border-red-200 bg-red-50 p-3 text-red-700">
@@ -1335,7 +1476,187 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+
+      {/* ── Electrical Panel Tracking ─────────────────────────────────────── */}
+      <section className="industrial-card rounded-xl p-5">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
+            <Wrench className="h-5 w-5 text-amber-600" /> Electrical Panel Tracking
+            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
+              {panels.filter((p:any) => p.status === "COMPLETED").length}/{panels.length} done
+            </span>
+          </h2>
+          {me?.role === "ADMIN" && (
+            <button onClick={() => setPanelFormOpen(v => !v)} className="btn-secondary gap-1 text-xs">
+              <Plus className="h-3.5 w-3.5" /> {panelFormOpen ? "Cancel" : "Add Panel"}
+            </button>
+          )}
+        </div>
+
+        {/* Add form */}
+        {panelFormOpen && me?.role === "ADMIN" && (
+          <div className="mb-5 grid gap-3 rounded-xl border border-amber-100 bg-amber-50/40 p-4 md:grid-cols-4">
+            <div>
+              <label className="industrial-label">Panel Name / ID *</label>
+              <input value={panelForm.panelName} onChange={e => setPanelForm(f => ({ ...f, panelName: e.target.value }))} placeholder="e.g. MCC Panel 1"
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            </div>
+            <div>
+              <label className="industrial-label">Assigned To</label>
+              <input value={panelForm.assignedTo} onChange={e => setPanelForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Technician name"
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            </div>
+            <div>
+              <label className="industrial-label">Remarks</label>
+              <input value={panelForm.remarks} onChange={e => setPanelForm(f => ({ ...f, remarks: e.target.value }))} placeholder="Optional notes"
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100" />
+            </div>
+            <div className="flex items-end">
+              <button type="button" disabled={addingPanel || !panelForm.panelName.trim()} onClick={async () => {
+                setAddingPanel(true);
+                const r = await fetch("/api/electrical-panels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: project.id, ...panelForm }) });
+                const p = await r.json();
+                if (p.success) { setPanelForm({ panelName: "", assignedTo: "", remarks: "" }); setPanelFormOpen(false); loadPanels(project.id); setToast({ kind: "success", message: "Panel added" }); }
+                else setToast({ kind: "error", message: p.message });
+                setAddingPanel(false);
+              }} className="btn-primary w-full">{addingPanel ? "Adding…" : "Add Panel"}</button>
+            </div>
+          </div>
         )}
+
+        {/* Panel cards */}
+        {panels.length === 0 ? (
+          <div className="erp-empty py-8">
+            <Wrench className="erp-empty-icon h-10 w-10" />
+            <p className="erp-empty-title text-sm">No panels tracked yet</p>
+            {me?.role === "ADMIN" && <p className="erp-empty-sub">Click "Add Panel" to start tracking electrical panels.</p>}
+          </div>
+        ) : (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+            {panels.map((panel: any) => {
+              const pct = panel.status === "COMPLETED" ? 100 : panel.status === "IN_PROGRESS" ? 50 : 0;
+              const colours = panel.status === "COMPLETED"
+                ? { border: "border-green-300", bg: "bg-green-50", badge: "bg-green-100 text-green-700", bar: "bg-green-500" }
+                : panel.status === "IN_PROGRESS"
+                ? { border: "border-blue-300", bg: "bg-blue-50", badge: "bg-blue-100 text-blue-700", bar: "bg-blue-500" }
+                : { border: "border-slate-200", bg: "bg-white", badge: "bg-slate-100 text-slate-600", bar: "bg-slate-300" };
+              return (
+                <div key={panel.id} className={`rounded-xl border-2 ${colours.border} ${colours.bg} p-4 flex flex-col gap-3`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-bold text-slate-800 leading-tight">{panel.panelName}</p>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${colours.badge}`}>
+                      {panel.status.replace("_", " ")}
+                    </span>
+                  </div>
+                  {panel.assignedTo && (
+                    <p className="text-xs text-slate-500">👤 {panel.assignedTo}</p>
+                  )}
+                  {panel.remarks && (
+                    <p className="text-xs italic text-slate-400">{panel.remarks}</p>
+                  )}
+                  {/* Progress bar */}
+                  <div>
+                    <div className="mb-1 flex justify-between text-[0.65rem] font-bold text-slate-500">
+                      <span>Progress</span><span>{pct}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-200">
+                      <div className={`h-2 rounded-full transition-all duration-500 ${colours.bar}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                  {/* Status control (admin only) */}
+                  {me?.role === "ADMIN" && (
+                    <select value={panel.status} onChange={async e => {
+                      const r = await fetch("/api/electrical-panels", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: panel.id, status: e.target.value }) });
+                      const p = await r.json();
+                      if (p.success) loadPanels(project.id);
+                      else setToast({ kind: "error", message: p.message });
+                    }} className="mt-auto w-full rounded-lg border border-slate-200 bg-white p-1.5 text-xs font-bold outline-none focus:border-amber-400 cursor-pointer">
+                      <option value="NOT_STARTED">Not Started</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="COMPLETED">Completed</option>
+                    </select>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── Client Remarks ──────────────────────────────────────────────────── */}
+
+      <section className="industrial-card rounded-xl p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-black text-slate-900">
+          <MessageSquare className="h-5 w-5 text-blue-600" /> Client Remarks
+        </h2>
+
+        {/* Input form */}
+        <div className="space-y-3 rounded-lg border border-blue-100 bg-blue-50/40 p-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="industrial-label">Section (optional)</label>
+              <select
+                value={remarkStageId}
+                onChange={e => setRemarkStageId(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">— General / No specific stage —</option>
+                {project.stages?.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.stage.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="industrial-label">Your Remark</label>
+            <textarea
+              rows={3}
+              value={remarkText}
+              onChange={e => setRemarkText(e.target.value)}
+              placeholder="Describe the issue, concern, or update for this project…"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={submittingRemark || !remarkText.trim()}
+              onClick={submitRemark}
+              className="btn-primary gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              {submittingRemark ? "Submitting…" : "Submit Remark"}
+            </button>
+          </div>
+        </div>
+
+        {/* Remarks list */}
+        <div className="mt-4 space-y-3">
+          {remarks.length === 0 ? (
+            <p className="text-center text-sm text-slate-400 py-4">No remarks yet. Be the first to add one.</p>
+          ) : remarks.map((r: any) => (
+            <div key={r.id} className={`rounded-lg border p-4 ${r.role === "ADMIN" ? "border-blue-200 bg-blue-50" : "border-slate-200 bg-white"}`}>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider ${r.role === "ADMIN" ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-700"}`}>
+                  {r.role}
+                </span>
+                {r.stageName && (
+                  <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[0.65rem] font-bold text-amber-700">
+                    {r.stageName}
+                  </span>
+                )}
+                <span className="text-xs text-slate-500">{r.createdBy}</span>
+                <span className="ml-auto font-mono text-[0.65rem] text-slate-400">
+                  {new Date(r.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-sm text-slate-800 whitespace-pre-wrap">{r.message}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── Dispatch modal ─────────────────────────────────────────────────── */}

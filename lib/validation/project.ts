@@ -46,3 +46,36 @@ export const addProcurementEntrySchema = z.object({
   sheetSize:      z.string().max(50).optional(),
   actionType:     z.enum(["ORDERED", "RECEIVED"])
 });
+
+/** Schema for client/admin remarks (project or stage-level). */
+export const createRemarkSchema = z.object({
+  projectId:      z.string().min(1),
+  projectStageId: z.string().min(1).optional(),
+  message:        z.string().trim().min(1).max(2000)
+});
+
+/** Schema for saving/updating a stage description. */
+export const upsertStageDescriptionSchema = z.object({
+  projectStageId: z.string().min(1),
+  description:    z.string().trim().max(5000)
+});
+
+/** Schema for creating a multi-category procurement item. */
+export const createProcurementItemSchema = z.object({
+  projectId:    z.string().min(1),
+  category:     z.enum(["SHEET_METAL","HARDWARE","ANGLE_PIPE","MACHINING_RAW","ELECTRICAL","MISCELLANEOUS"]),
+  materialName: z.string().trim().min(1).max(200),
+  materialType: z.string().trim().max(50).default("MS"),
+  thickness:    z.string().trim().max(20).optional(),
+  quantity:     z.number().positive(),
+  unit:         z.string().trim().max(30).default("pcs"),
+  vendor:       z.string().trim().max(200).optional()
+});
+
+/** Schema for updating a procurement item's status / received qty. */
+export const updateProcurementItemSchema = z.object({
+  id:          z.string().min(1),
+  status:      z.enum(["ORDERED","RECEIVED","PENDING"]).optional(),
+  receivedQty: z.number().min(0).optional(),
+  vendor:      z.string().trim().max(200).optional()
+});

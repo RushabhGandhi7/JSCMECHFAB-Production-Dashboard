@@ -260,88 +260,92 @@ export default function DashboardPage() {
                       : "border-l-slate-200";
 
               return (
-                <article
+                /* ── FIX: entire card is clickable ─────────────────────────── */
+                <Link
                   key={project.id}
-                  className={`industrial-card rounded-xl border-l-4 p-5 transition-all duration-200 hover:shadow-md ${statusBorder}`}
+                  href={`/project/${project.id}`}
+                  className="block"
                 >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div className="min-w-0">
-                      <p className="industrial-label">Project No</p>
-                      <Link
-                        href={`/project/${project.id}`}
-                        className="font-mono text-2xl font-black tracking-tight text-slate-900 transition hover:text-blue-600"
-                      >
-                        {project.projectNo}
-                      </Link>
-                      <p className="mt-1 text-sm font-medium text-slate-700">{project.equipmentType}</p>
-                      <p className="mt-0.5 text-sm text-slate-500">{project.client?.name ?? project.clientName}</p>
+                  <article
+                    className={`industrial-card cursor-pointer rounded-xl border-l-4 p-5 transition-all duration-200 hover:shadow-lg hover:scale-[1.005] ${statusBorder}`}
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0">
+                        <p className="industrial-label">Project No</p>
+                        <p className="font-mono text-2xl font-black tracking-tight text-slate-900 transition hover:text-blue-600">
+                          {project.projectNo}
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-slate-700">{project.equipmentType}</p>
+                        <p className="mt-0.5 text-sm text-slate-500">{project.client?.name ?? project.clientName}</p>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+                        <StatusBadge value={project.status} />
+                        {me?.role === "ADMIN" ? (
+                          /* Stop propagation so delete button doesn't trigger card navigation */
+                          <button
+                            type="button"
+                            title="Move to trash"
+                            className="btn-icon-danger"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteId(project.id); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2 md:ml-auto">
-                      <StatusBadge value={project.status} />
-                      {me?.role === "ADMIN" ? (
-                        <button
-                          type="button"
-                          title="Move to trash"
-                          className="btn-icon-danger"
-                          onClick={() => setConfirmDeleteId(project.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      ) : null}
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <p className="industrial-label">Created</p>
+                        <p className="mt-1 font-mono text-sm font-bold text-slate-900">{fmtDate(project.createdAt)}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <p className="industrial-label flex items-center gap-1">
+                          <CalendarRange className="h-3 w-3" /> Drawing in
+                        </p>
+                        <p className="mt-1 font-mono text-sm font-bold text-slate-900">{fmtDate(project.drawingReceivedDate)}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                        <p className="industrial-label text-amber-700">Est. Completion</p>
+                        <p className="mt-1 font-mono text-sm font-bold text-slate-900">
+                          {project.drawingReceivedDate
+                            ? fmtDate(project.expectedCompletionDate ?? project.metrics?.expectedCompletionDate)
+                            : "Awaiting drawing"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                      <p className="industrial-label">Created</p>
-                      <p className="mt-1 font-mono text-sm font-bold text-slate-900">{fmtDate(project.createdAt)}</p>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="industrial-label">Days remaining</p>
+                        <p className={`font-mono text-2xl font-black ${overdue ? "text-red-600" : "text-slate-900"}`}>
+                          {dr === null ? "—" : `${dr} d`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="industrial-label">Overall progress</p>
+                        <p className="font-mono text-2xl font-black text-blue-600">{project.metrics.totalProgress.toFixed(1)}%</p>
+                      </div>
                     </div>
-                    <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                      <p className="industrial-label flex items-center gap-1">
-                        <CalendarRange className="h-3 w-3" /> Drawing in
-                      </p>
-                      <p className="mt-1 font-mono text-sm font-bold text-slate-900">{fmtDate(project.drawingReceivedDate)}</p>
-                    </div>
-                    <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-                      <p className="industrial-label text-amber-700">Est. Completion</p>
-                      <p className="mt-1 font-mono text-sm font-bold text-slate-900">
-                        {project.drawingReceivedDate
-                          ? fmtDate(project.expectedCompletionDate ?? project.metrics?.expectedCompletionDate)
-                          : "Awaiting drawing"}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="industrial-label">Days remaining</p>
-                      <p className={`font-mono text-2xl font-black ${overdue ? "text-red-600" : "text-slate-900"}`}>
-                        {dr === null ? "—" : `${dr} d`}
-                      </p>
+                    <div className="mt-3">
+                      <div className="industrial-progress-track">
+                        <div
+                          className={`industrial-progress-fill ${overdue ? "bg-red-500" : project.status === "COMPLETED" ? "bg-green-500" : "bg-blue-500"}`}
+                          style={{ width: `${Math.max(2, project.metrics.totalProgress)}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="industrial-label">Overall progress</p>
-                      <p className="font-mono text-2xl font-black text-blue-600">{project.metrics.totalProgress.toFixed(1)}%</p>
-                    </div>
-                  </div>
 
-                  <div className="mt-3">
-                    <div className="industrial-progress-track">
-                      <div
-                        className={`industrial-progress-fill ${overdue ? "bg-red-500" : project.status === "COMPLETED" ? "bg-green-500" : "bg-blue-500"}`}
-                        style={{ width: `${Math.max(2, project.metrics.totalProgress)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {overdue || project.status === "DELAYED" ? (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <span className="text-xs font-semibold">Timeline or stage delay — review control panel</span>
-                    </div>
-                  ) : null}
-                </article>
+                    {overdue || project.status === "DELAYED" ? (
+                      <div className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-semibold">Timeline or stage delay — review control panel</span>
+                      </div>
+                    ) : null}
+                  </article>
+                </Link>
               );
             })}
           </div>

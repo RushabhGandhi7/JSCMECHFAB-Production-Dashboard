@@ -30,29 +30,32 @@ model Client {
 }
 
 model Project {
-  id                     String         @id @default(cuid())
-  projectNo              String         @unique
+  id                     String            @id @default(cuid())
+  projectNo              String            @unique
   // Legacy (kept temporarily for safe migration/backfill).
   clientName             String
   clientId               String?
-  client                 Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  client                 Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
   equipmentType          String
   orderDate              DateTime
   deliveryDate           DateTime
-  status                 ProjectStatus  @default(PLANNING)
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
-  isDeleted              Boolean        @default(false)
+  status                 ProjectStatus     @default(PLANNING)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  isDeleted              Boolean           @default(false)
   dispatchedAt           DateTime?
   completionDays         Int?
   deletedAt              DateTime?
   drawingReceivedDate    DateTime?
   expectedCompletionDate DateTime?
-  productionDurationDays Int            @default(28)
-  excludeSundays         Boolean        @default(false)
+  productionDurationDays Int               @default(28)
+  excludeSundays         Boolean           @default(false)
   activityLogs           ActivityLog[]
   stages                 ProjectStage[]
   stageProgressLogs      StageProgressLog[]
+  clientRemarks          ClientRemark[]
+  procurementItems       ProcurementItem[]
+  electricalPanels       ElectricalPanel[]
 
   @@index([status])
   @@index([clientId])
@@ -70,20 +73,22 @@ model ProductionStage {
 }
 
 model ProjectStage {
-  id           String          @id @default(cuid())
-  projectId    String
-  stageId      String
-  status       StageStatus     @default(NOT_STARTED)
-  progress     Float           @default(0)
-  plannedDate  DateTime?
-  actualDate   DateTime?
-  delayReason  String?
-  isDelayed    Boolean         @default(false)
-  stageDetails Json?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  project      Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  stage        ProductionStage @relation(fields: [stageId], references: [id])
+  id            String            @id @default(cuid())
+  projectId     String
+  stageId       String
+  status        StageStatus       @default(NOT_STARTED)
+  progress      Float             @default(0)
+  plannedDate   DateTime?
+  actualDate    DateTime?
+  delayReason   String?
+  isDelayed     Boolean           @default(false)
+  stageDetails  Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  project       Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage         ProductionStage   @relation(fields: [stageId], references: [id])
+  description   StageDescription?
+  clientRemarks ClientRemark[]
 
   @@unique([projectId, stageId])
   @@index([projectId])
@@ -121,6 +126,87 @@ model ActivityLog {
   @@index([action])
 }
 
+// ── Client Remarks (visible to admin + client, triggers email on submit) ──────
+
+model ClientRemark {
+  id             String        @id @default(cuid())
+  projectId      String
+  projectStageId String?
+  message        String
+  createdBy      String        // email of the user
+  role           UserRole
+  stageName      String?       // denormalised for display
+  createdAt      DateTime      @default(now())
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectStage   ProjectStage? @relation(fields: [projectStageId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([projectStageId])
+  @@index([createdAt])
+}
+
+// ── Stage Description (admin writes, client reads; replaces delay log) ────────
+
+model StageDescription {
+  id             String       @id @default(cuid())
+  projectStageId String       @unique
+  description    String
+  updatedBy      String
+  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now())
+  projectStage   ProjectStage @relation(fields: [projectStageId], references: [id], onDelete: Cascade)
+
+  @@index([projectStageId])
+}
+
+// ── Multi-category Procurement ────────────────────────────────────────────────
+
+model ProcurementItem {
+  id             String              @id @default(cuid())
+  projectId      String
+  category       ProcurementCategory
+  materialName   String
+  materialType   String              @default("MS")  // MS / SS / Others
+  thickness      Float?                               // mm
+  lengthMm       Float?                               // mm
+  widthMm        Float?                               // mm
+  quantity       Float
+  receivedQty    Float               @default(0)
+  unit           String              @default("pcs")  // kg / nos / sheet
+  weightKg       Float?                               // auto-calculated (Sheet Metal)
+  manualWeightKg Float?                               // manual override for other categories
+  isLumpsum      Boolean             @default(false)  // Hardware LS entry
+  ratePerKg      Float?                               // ₹ per kg
+  totalValue     Float?                               // weightKg × ratePerKg
+  vendor         String?
+  notes          String?
+  status         ProcurementStatus   @default(PENDING)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  project        Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  logs           ProcurementLog[]
+
+  @@index([projectId])
+  @@index([category])
+  @@index([status])
+}
+
+model ProcurementLog {
+  id            String            @id @default(cuid())
+  itemId        String
+  action        ProcurementAction
+  previousValue String?
+  newValue      String?
+  updatedBy     String
+  createdAt     DateTime          @default(now())
+  item          ProcurementItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@index([createdAt])
+}
+
+// ── Enums ─────────────────────────────────────────────────────────────────────
+
 enum ProjectStatus {
   PLANNING
   IN_PRODUCTION
@@ -138,4 +224,48 @@ enum StageStatus {
 enum UserRole {
   ADMIN
   CLIENT
+}
+
+enum ProcurementCategory {
+  SHEET_METAL
+  HARDWARE
+  ANGLE_PIPE
+  MACHINING_RAW
+  ELECTRICAL
+  MISCELLANEOUS
+}
+
+enum ProcurementStatus {
+  ORDERED
+  RECEIVED
+  PENDING
+}
+
+enum ProcurementAction {
+  ORDERED
+  RECEIVED
+  UPDATED
+}
+
+// ── Electrical Panel Tracking ──────────────────────────────────────────────────
+
+model ElectricalPanel {
+  id          String             @id @default(cuid())
+  projectId   String
+  panelName   String
+  assignedTo  String?
+  status      ElectricalStatus   @default(NOT_STARTED)
+  remarks     String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+}
+
+enum ElectricalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
 }

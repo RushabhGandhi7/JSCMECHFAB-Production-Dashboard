@@ -115,6 +115,17 @@ export function UserMenu() {
 
             {me.role === "ADMIN" ? (
               <Link
+                href="/procurement"
+                className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-bold transition-colors ${
+                  isActive("/procurement") ? "bg-emerald-50 text-emerald-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                }`}
+              >
+                Procurement
+              </Link>
+            ) : null}
+
+            {me.role === "ADMIN" ? (
+              <Link
                 href="/trash"
                 className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-bold transition-colors ${
                   isActive("/trash") ? "bg-slate-100 text-slate-900" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
