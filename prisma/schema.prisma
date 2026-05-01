@@ -181,6 +181,8 @@ model ProcurementItem {
   vendor         String?
   notes          String?
   status         ProcurementStatus   @default(PENDING)
+  isDeleted      Boolean             @default(false)  // soft-delete flag
+  deletedAt      DateTime?                            // when it was soft-deleted
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   project        Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
