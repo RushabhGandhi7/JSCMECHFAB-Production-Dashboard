@@ -2,10 +2,12 @@
 
 export function Toast({
   message,
-  kind
+  kind,
+  onDismiss
 }: {
   message: string;
   kind: "success" | "error";
+  onDismiss?: () => void;
 }) {
   if (!message) return null;
   const className =
