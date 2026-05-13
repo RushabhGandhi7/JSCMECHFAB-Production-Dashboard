@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { parseSessionLite } from "@/lib/session";
 
-export function middleware(req: NextRequest) {
+export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = parseSessionLite(req.cookies.get("wfpcs_session")?.value);
 
@@ -60,4 +60,5 @@ export const config = {
     "/api/:path*"
   ]
 };
+
 

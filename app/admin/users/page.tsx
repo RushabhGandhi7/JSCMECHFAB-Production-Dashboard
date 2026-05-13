@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
         <p className="mt-1 text-sm text-slate-600">Create client-specific login accounts for project isolation.</p>
       </header>
 
-      {toast ? <Toast kind={toast.kind} message={toast.message} /> : null}
+      {toast ? <Toast kind={toast.kind} message={toast.message} onDismiss={() => setToast(null)} /> : null}
 
       <form onSubmit={onSubmit} className="industrial-card space-y-4 rounded-xl p-5">
         <div>

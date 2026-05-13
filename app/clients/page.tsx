@@ -112,7 +112,7 @@ export default function ClientsPage() {
         </div>
       </header>
 
-      {toast ? <Toast kind={toast.kind} message={toast.message} /> : null}
+      {toast ? <Toast kind={toast.kind} message={toast.message} onDismiss={() => setToast(null)} /> : null}
 
       {/* Table */}
       <section className="industrial-card rounded-xl p-5">
@@ -128,58 +128,97 @@ export default function ClientsPage() {
         {loading ? (
           <LoadingSpinner label="Loading clients..." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="erp-table">
-              <thead>
-                <tr>
-                  <th>Client Name</th>
-                  <th>Projects</th>
-                  <th>Users</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((client) => (
-                  <tr key={client.id}>
-                    <td className="font-semibold text-slate-900">{client.name}</td>
-                    <td>
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-100">
-                        {client._count.projects} project{client._count.projects !== 1 ? "s" : ""}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                        {client._count.users} user{client._count.users !== 1 ? "s" : ""}
-                      </span>
-                    </td>
-                    <td className="font-mono text-xs text-slate-500">{new Date(client.createdAt).toLocaleString()}</td>
-                    <td>
-                      <div className="flex gap-2">
-                        <button
-                          className="btn-secondary text-xs px-3 py-1.5"
-                          onClick={() => setShowRenameId(client.id)}
-                        >
-                          Rename
-                        </button>
-                        <button
-                          className="btn-danger text-xs px-3 py-1.5"
-                          onClick={() => setShowDeleteId(client.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 ? (
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="erp-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-400">No clients match your search.</td>
+                    <th>Client Name</th>
+                    <th>Projects</th>
+                    <th>Users</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                   </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filtered.map((client) => (
+                    <tr key={client.id}>
+                      <td className="font-semibold text-slate-900">{client.name}</td>
+                      <td>
+                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-100">
+                          {client._count.projects} project{client._count.projects !== 1 ? "s" : ""}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                          {client._count.users} user{client._count.users !== 1 ? "s" : ""}
+                        </span>
+                      </td>
+                      <td className="font-mono text-xs text-slate-500">{new Date(client.createdAt).toLocaleString()}</td>
+                      <td>
+                        <div className="flex gap-2">
+                          <button
+                            className="btn-secondary text-xs px-3 py-1.5"
+                            onClick={() => setShowRenameId(client.id)}
+                          >
+                            Rename
+                          </button>
+                          <button
+                            className="btn-danger text-xs px-3 py-1.5"
+                            onClick={() => setShowDeleteId(client.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-slate-400">No clients match your search.</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card view */}
+            <div className="block md:hidden space-y-3">
+              {filtered.length === 0 ? (
+                <p className="py-10 text-center text-slate-400">No clients match your search.</p>
+              ) : filtered.map((client) => (
+                <div key={client.id} className="industrial-card rounded-xl p-4">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <p className="font-bold text-slate-900 text-base">{client.name}</p>
+                    <p className="mobile-card-label">{new Date(client.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex gap-3 mb-4">
+                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 border border-blue-100">
+                      {client._count.projects} project{client._count.projects !== 1 ? "s" : ""}
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                      {client._count.users} user{client._count.users !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="flex-1 btn-secondary text-xs justify-center"
+                      onClick={() => setShowRenameId(client.id)}
+                    >
+                      Rename
+                    </button>
+                    <button
+                      className="flex-1 btn-danger text-xs justify-center"
+                      onClick={() => setShowDeleteId(client.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

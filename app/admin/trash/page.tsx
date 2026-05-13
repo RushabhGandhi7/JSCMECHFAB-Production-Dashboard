@@ -68,7 +68,7 @@ export default function AdminTrashPage() {
         </div>
       </header>
 
-      {toast ? <Toast kind={toast.kind} message={toast.message} /> : null}
+      {toast ? <Toast kind={toast.kind} message={toast.message} onDismiss={() => setToast(null)} /> : null}
 
       {loading ? (
         <div className="industrial-card rounded-xl p-5">

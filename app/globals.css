@@ -7,11 +7,22 @@ body {
   background: #f8fafc;
   color: #0f172a;
   font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Prevent horizontal overflow on mobile */
+  overflow-x: hidden;
 }
 
 * {
   scrollbar-width: thin;
   scrollbar-color: #94a3b8 #f1f5f9;
+  /* Better box sizing for mobile */
+  box-sizing: border-box;
+}
+
+/* ─── Mobile: prevent iOS zoom on input focus ────────────────────────────── */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* ─── Cards ─────────────────────────────────────────────────────────────────── */
@@ -77,6 +88,8 @@ body {
   box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   cursor: pointer;
+  /* Mobile: larger touch target */
+  min-height: 44px;
 }
 .btn-primary:hover:not(:disabled) {
   background: #1d4ed8;
@@ -104,6 +117,7 @@ body {
   box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   cursor: pointer;
+  min-height: 44px;
 }
 .btn-success:hover:not(:disabled) {
   background: #15803d;
@@ -131,6 +145,7 @@ body {
   box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   cursor: pointer;
+  min-height: 44px;
 }
 .btn-danger:hover:not(:disabled) {
   background: #dc2626;
@@ -158,6 +173,7 @@ body {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
+  min-height: 44px;
 }
 .btn-secondary:hover:not(:disabled) {
   background: #f9fafb;
@@ -184,6 +200,7 @@ body {
   box-shadow: 0 1px 2px rgba(124, 58, 237, 0.2);
   transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   cursor: pointer;
+  min-height: 44px;
 }
 .btn-dispatch:hover:not(:disabled) {
   background: #6d28d9;
@@ -208,6 +225,9 @@ body {
   padding: 0.4rem;
   transition: background 0.15s ease, transform 0.15s ease;
   cursor: pointer;
+  /* Mobile touch target */
+  min-width: 44px;
+  min-height: 44px;
 }
 .btn-icon-danger:hover:not(:disabled) {
   background: #fee2e2;
@@ -288,4 +308,52 @@ body {
   font-size: 0.8rem;
   color: #94a3b8;
   margin-top: 0.25rem;
+}
+
+/* ─── Gantt chart mobile scroll ──────────────────────────────────────────────── */
+.gantt-scroll-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+.gantt-inner {
+  min-width: 560px;
+}
+
+/* ─── Mobile card layout (replaces tables on small screens) ─────────────────── */
+.mobile-card-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+.mobile-card-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+.mobile-card-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-top: 0.125rem;
+}
+
+/* ─── Drawer backdrop ────────────────────────────────────────────────────────── */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+/* ─── PWA safe area support ──────────────────────────────────────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

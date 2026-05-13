@@ -13,14 +13,14 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const THICKNESS_OPTIONS = [
-  "2mm","4mm","6mm","8mm","10mm","12mm","14mm","16mm","18mm","20mm"
+  "2mm", "4mm", "6mm", "8mm", "10mm", "12mm", "14mm", "16mm", "18mm", "20mm"
 ] as const;
 
-const SHEET_SIZE_OPTIONS = ["1250x2500","1500x3000"] as const;
+const SHEET_SIZE_OPTIONS = ["1250x2500", "1500x3000"] as const;
 
 const DELAY_OPTIONS = [
-  "Material delay","Vendor delay","Rework",
-  "Quality issue","Machine breakdown","Other"
+  "Material delay", "Vendor delay", "Rework",
+  "Quality issue", "Machine breakdown", "Other"
 ];
 
 /**
@@ -33,22 +33,22 @@ const DELAY_OPTIONS = [
  * linearly to whatever productionDurationDays the project uses.
  */
 const PRODUCTION_TIMELINE_SEGMENTS = [
-  { label: "Drawing & Design", startDay: 1,  endDay: 4,  matchKey: "drawing"     },
-  { label: "Procurement",      startDay: 4,  endDay: 7,  matchKey: "procurement" },
-  { label: "Cutting",          startDay: 7,  endDay: 10, matchKey: "cutting"     },
-  { label: "Machining",        startDay: 10, endDay: 13, matchKey: "machining"   },
-  { label: "Fabrication",      startDay: 13, endDay: 19, matchKey: "fabrication" },
-  { label: "Assembly",         startDay: 19, endDay: 23, matchKey: "assembly"    },
-  { label: "Testing",          startDay: 23, endDay: 26, matchKey: "testing"     },
-  { label: "Dispatch",         startDay: 26, endDay: 28, matchKey: "dispatch"    }
+  { label: "Drawing & Design", startDay: 1, endDay: 4, matchKey: "drawing" },
+  { label: "Procurement", startDay: 4, endDay: 7, matchKey: "procurement" },
+  { label: "Cutting", startDay: 7, endDay: 10, matchKey: "cutting" },
+  { label: "Machining", startDay: 10, endDay: 13, matchKey: "machining" },
+  { label: "Fabrication", startDay: 13, endDay: 19, matchKey: "fabrication" },
+  { label: "Assembly", startDay: 19, endDay: 23, matchKey: "assembly" },
+  { label: "Testing", startDay: 23, endDay: 26, matchKey: "testing" },
+  { label: "Dispatch", startDay: 26, endDay: 28, matchKey: "dispatch" }
 ] as const;
 
 /** Gantt bar gradient class based on segment status. */
 const GANTT_COLOURS = {
-  completed:   "bg-gradient-to-r from-green-400 to-green-600",
+  completed: "bg-gradient-to-r from-green-400 to-green-600",
   in_progress: "bg-gradient-to-r from-blue-400 to-blue-600",
-  delayed:     "bg-gradient-to-r from-red-400 to-red-600",
-  upcoming:    "bg-slate-200"
+  delayed: "bg-gradient-to-r from-red-400 to-red-600",
+  upcoming: "bg-slate-200"
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -108,32 +108,32 @@ function addWorkingDays(base: Date, days: number, excludeSundays: boolean): Date
 
 function progressTone(p: number) {
   if (p >= 99) return "bg-green-500";
-  if (p > 0)   return "bg-yellow-500";
+  if (p > 0) return "bg-yellow-500";
   return "bg-slate-600";
 }
 
 function statusLeftBorder(status: string, delayed: boolean) {
   if (delayed || status === "DELAYED") return "border-l-red-500";
-  if (status === "COMPLETED")          return "border-l-green-500";
-  if (status === "IN_PROGRESS")        return "border-l-blue-500";
+  if (status === "COMPLETED") return "border-l-green-500";
+  if (status === "IN_PROGRESS") return "border-l-blue-500";
   return "border-l-slate-300";
 }
 
 function stageIcon(name: string) {
   const n = name.toLowerCase();
   if (n.includes("drawing") || n.includes("design")) return Pencil;
-  if (n.includes("fabrication"))                     return Settings;
-  if (n.includes("assembly"))                        return Wrench;
-  if (n.includes("testing"))                         return CheckCircle;
-  if (n.includes("dispatch"))                        return Truck;
-  if (n.includes("procurement"))                     return Package;
+  if (n.includes("fabrication")) return Settings;
+  if (n.includes("assembly")) return Wrench;
+  if (n.includes("testing")) return CheckCircle;
+  if (n.includes("dispatch")) return Truck;
+  if (n.includes("procurement")) return Package;
   return Gauge;
 }
 
 function timelinePosition(project: any) {
-  const start  = project.drawingReceivedDate ? new Date(project.drawingReceivedDate).getTime() : null;
+  const start = project.drawingReceivedDate ? new Date(project.drawingReceivedDate).getTime() : null;
   const endIso = project.expectedCompletionDate || project.metrics?.expectedCompletionDate;
-  const end    = endIso ? new Date(endIso).getTime() : null;
+  const end = endIso ? new Date(endIso).getTime() : null;
   if (!start || !end || end <= start) return { pct: 0, overdue: false, hasWindow: false };
   const now = Date.now();
   return {
@@ -146,8 +146,8 @@ function timelinePosition(project: any) {
 function getDetailType(stageName: string): DetailType {
   const n = stageName.toLowerCase();
   if (n.includes("drawing") || n.includes("design")) return "drawing";
-  if (n.includes("procurement"))                     return "procurement";
-  if (n.includes("machining"))                       return "machining";  // independent stage
+  if (n.includes("procurement")) return "procurement";
+  if (n.includes("machining")) return "machining";  // independent stage
   if (n.includes("cutting") || n.includes("bending")) return "cutting";
   return null;
 }
@@ -168,7 +168,7 @@ const defaultProcForm = () => ({
  */
 function deriveStatus(progress: number): "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" {
   if (progress >= 100) return "COMPLETED";
-  if (progress > 0)    return "IN_PROGRESS";
+  if (progress > 0) return "IN_PROGRESS";
   return "NOT_STARTED";
 }
 
@@ -179,59 +179,60 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const { id } = resolvedParams;
 
   // ── Core state ─────────────────────────────────────────────────────────────
-  const [project, setProject]               = useState<ProjectPayload | null>(null);
-  const [error, setError]                   = useState("");
-  const [updatingId, setUpdatingId]         = useState<string | null>(null);
-  const [toast, setToast]                   = useState<{ message: string; kind: "success" | "error" } | null>(null);
-  const [me, setMe]                         = useState<{ role: "ADMIN" | "CLIENT"; clientName: string; email?: string } | null>(null);
+  const [project, setProject] = useState<ProjectPayload | null>(null);
+  const [error, setError] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; kind: "success" | "error" } | null>(null);
+  const [me, setMe] = useState<{ role: "ADMIN" | "CLIENT"; clientName: string; email?: string } | null>(null);
 
   // ── Project-level settings ─────────────────────────────────────────────────
-  const [drawingInput, setDrawingInput]         = useState("");
-  const [durationInput, setDurationInput]       = useState(28);
+  const [drawingInput, setDrawingInput] = useState("");
+  const [durationInput, setDurationInput] = useState(28);
   const [excludeSundaysInput, setExcludeSundaysInput] = useState(false);
 
   // ── Stage form state ───────────────────────────────────────────────────────
   const [selectedStageId, setSelectedStageId] = useState("");
-  const [quickUpdate, setQuickUpdate]         = useState({ progress: 0, status: "NOT_STARTED", delayReason: "" });
-  const [stageDetails, setStageDetails]       = useState<Record<string, unknown>>({});
-  const [saveGlow, setSaveGlow]               = useState(false);
+  const [quickUpdate, setQuickUpdate] = useState({ progress: 0, status: "NOT_STARTED", delayReason: "" });
+  const [stageDetails, setStageDetails] = useState<Record<string, unknown>>({});
+  const [saveGlow, setSaveGlow] = useState(false);
 
   // ── Procurement add-entry form ─────────────────────────────────────────────
-  const [procForm, setProcForm]             = useState(defaultProcForm());
-  const [addingProc, setAddingProc]         = useState(false);
-  const [procFormOpen, setProcFormOpen]     = useState(false);
+  const [procForm, setProcForm] = useState(defaultProcForm());
+  const [addingProc, setAddingProc] = useState(false);
+  const [procFormOpen, setProcFormOpen] = useState(false);
 
   // ── UI state ───────────────────────────────────────────────────────────────
-  const [logExpanded, setLogExpanded]         = useState(true);
-  const [confirmDelete, setConfirmDelete]     = useState(false);
-  const [deleting, setDeleting]               = useState(false);
+  const [logExpanded, setLogExpanded] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [confirmDispatch, setConfirmDispatch] = useState(false);
-  const [dispatching, setDispatching]         = useState(false);
+  const [dispatching, setDispatching] = useState(false);
   /** Stage ID briefly highlighted with green ring after a successful save. */
-  const [changedStageId, setChangedStageId]   = useState<string | null>(null);
+  const [changedStageId, setChangedStageId] = useState<string | null>(null);
   /** Index into PRODUCTION_TIMELINE_SEGMENTS whose Gantt bar is being hovered. */
   const [hoveredGanttIdx, setHoveredGanttIdx] = useState<number | null>(null);
 
   // ── Remarks state ─────────────────────────────────────────────────────────
-  const [remarks, setRemarks]               = useState<any[]>([]);
-  const [remarkText, setRemarkText]         = useState("");
-  const [remarkStageId, setRemarkStageId]   = useState("");
+  const [remarks, setRemarks] = useState<any[]>([]);
+  const [remarkText, setRemarkText] = useState("");
+  const [remarkStageId, setRemarkStageId] = useState("");
   const [submittingRemark, setSubmittingRemark] = useState(false);
 
   // ── Procurement items (from new relational table) ───────────────────────
-  const [procItems, setProcItems]           = useState<any[]>([]);
-  const [procExpanded, setProcExpanded]     = useState<string | null>(null);
+  const [procItems, setProcItems] = useState<any[]>([]);
+  const [procExpanded, setProcExpanded] = useState<string | null>(null);
 
   // ── Electrical panels state ─────────────────────────────────────────
-  const [panels, setPanels]                 = useState<any[]>([]);
-  const [panelForm, setPanelForm]           = useState({ panelName: "", assignedTo: "", remarks: "" });
-  const [addingPanel, setAddingPanel]       = useState(false);
-  const [panelFormOpen, setPanelFormOpen]   = useState(false);
+  const [panels, setPanels] = useState<any[]>([]);
+  const [panelForm, setPanelForm] = useState({ panelName: "", assignedTo: "", remarks: "" });
+  const [addingPanel, setAddingPanel] = useState(false);
+  const [panelFormOpen, setPanelFormOpen] = useState(false);
+
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   async function load(projectId: string) {
     try {
-      const res     = await fetch(`/api/projects/${projectId}`);
+      const res = await fetch(`/api/projects/${projectId}`);
       const payload = await res.json();
       if (!res.ok || !payload.success) return setError(payload.message ?? "Failed to load project");
       setProject(payload.data);
@@ -248,7 +249,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const r = await fetch(`/api/remarks?projectId=${projectId}`);
       const p = await r.json();
       if (p.success) setRemarks(p.data.reverse()); // latest first
-    } catch {}
+    } catch { }
   }
 
   async function loadProcItems(projectId: string) {
@@ -256,7 +257,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const r = await fetch(`/api/procurement?projectId=${projectId}`);
       const p = await r.json();
       if (p.success) setProcItems(p.data);
-    } catch {}
+    } catch { }
   }
 
   async function loadPanels(projectId: string) {
@@ -264,8 +265,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       const r = await fetch(`/api/electrical-panels?projectId=${projectId}`);
       const p = await r.json();
       if (p.success) setPanels(p.data);
-    } catch {}
+    } catch { }
   }
+
 
   async function submitRemark() {
     if (!remarkText.trim() || !project) return;
@@ -291,13 +293,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       setToast({ kind: "error", message: "Failed to submit remark" });
     }
     setSubmittingRemark(false);
-}
+  }
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((p) => { if (p?.success) setMe(p.data); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -324,7 +326,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     setExcludeSundaysInput((project as any).excludeSundays ?? false);
 
     const first = project.stages[0];
-    const sel   = selectedStageId && project.stages.some((s: any) => s.id === selectedStageId)
+    const sel = selectedStageId && project.stages.some((s: any) => s.id === selectedStageId)
       ? selectedStageId : first.id;
     const stage = project.stages.find((s: any) => s.id === sel) ?? first;
 
@@ -362,16 +364,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const plannedSchedule = useMemo(() => {
     if (!project?.drawingReceivedDate) return null;
     const base = new Date(project.drawingReceivedDate);
-    const now  = new Date();
+    const now = new Date();
     let cumulativeShiftDays = 0; // propagates delays to downstream phases
 
     return PRODUCTION_TIMELINE_SEGMENTS.map((seg) => {
       // Scale proportionally from standard 28-day template
       const scaledStart = Math.round((seg.startDay - 1) / 28 * totalDays);
-      const scaledEnd   = Math.round(seg.endDay / 28 * totalDays);
+      const scaledEnd = Math.round(seg.endDay / 28 * totalDays);
 
       const plannedStart = addWorkingDays(base, scaledStart + cumulativeShiftDays, excSundays);
-      const plannedEnd   = addWorkingDays(base, scaledEnd   + cumulativeShiftDays, excSundays);
+      const plannedEnd = addWorkingDays(base, scaledEnd + cumulativeShiftDays, excSundays);
 
       const matchedStage = seg.matchKey
         ? project.stages?.find((s: any) => s.stage?.name?.toLowerCase().includes(seg.matchKey))
@@ -386,9 +388,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       // Status: delayReason OR isDelayed both trigger red in the timeline
       let segStatus: SegStatus = "upcoming";
-      if (matchedStage?.status === "COMPLETED")                               segStatus = "completed";
-      else if (matchedStage?.isDelayed || matchedStage?.delayReason)          segStatus = "delayed";
-      else if (now > plannedEnd && matchedStage?.status !== "NOT_STARTED")    segStatus = "delayed";
+      if (matchedStage?.status === "COMPLETED") segStatus = "completed";
+      else if (matchedStage?.isDelayed || matchedStage?.delayReason) segStatus = "delayed";
+      else if (now > plannedEnd && matchedStage?.status !== "NOT_STARTED") segStatus = "delayed";
       else if (now >= plannedStart || matchedStage?.status === "IN_PROGRESS") segStatus = "in_progress";
 
       return { ...seg, scaledStart, scaledEnd, plannedStart, plannedEnd, segStatus, matchedStage };
@@ -399,7 +401,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const ganttBars = useMemo(() => {
     if (!project?.stages) return null;
     return PRODUCTION_TIMELINE_SEGMENTS.map((seg) => {
-      const leftPct  = (seg.startDay - 1) / 28 * 100;
+      const leftPct = (seg.startDay - 1) / 28 * 100;
       const widthPct = (seg.endDay - seg.startDay + 1) / 28 * 100;
 
       const matchedStage = seg.matchKey
@@ -408,14 +410,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       // Mirror the same status logic used in plannedSchedule
       let segStatus: SegStatus = "upcoming";
-      if (matchedStage?.status === "COMPLETED")                      segStatus = "completed";
+      if (matchedStage?.status === "COMPLETED") segStatus = "completed";
       else if (matchedStage?.isDelayed || matchedStage?.delayReason) segStatus = "delayed";
-      else if (matchedStage?.status === "IN_PROGRESS")               segStatus = "in_progress";
+      else if (matchedStage?.status === "IN_PROGRESS") segStatus = "in_progress";
 
       return {
         ...seg, leftPct, widthPct, matchedStage, segStatus,
-        progress:   matchedStage?.progress   ?? 0,
-        actualDate: matchedStage?.actualDate  ?? null
+        progress: matchedStage?.progress ?? 0,
+        actualDate: matchedStage?.actualDate ?? null
       };
     });
   }, [project?.stages]);
@@ -442,7 +444,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   /** Aggregate totals for procurement summary cards. */
   const procSummary = useMemo(() => {
-    const totalOrdered  = procurementLog.filter(e => e.actionType === "ORDERED").reduce((n, e) => n + e.quantity, 0);
+    const totalOrdered = procurementLog.filter(e => e.actionType === "ORDERED").reduce((n, e) => n + e.quantity, 0);
     const totalReceived = procurementLog.filter(e => e.actionType === "RECEIVED").reduce((n, e) => n + e.quantity, 0);
     return { totalOrdered, totalReceived, pending: Math.max(0, totalOrdered - totalReceived) };
   }, [procurementLog]);
@@ -466,11 +468,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectStageId: selectedStageId,
-          materialType:   procForm.materialType,
-          thickness:      procForm.thickness,
-          quantity:       Number(procForm.quantity),
-          sheetSize:      procForm.sheetSize || undefined,
-          actionType:     procForm.actionType
+          materialType: procForm.materialType,
+          thickness: procForm.thickness,
+          quantity: Number(procForm.quantity),
+          sheetSize: procForm.sheetSize || undefined,
+          actionType: procForm.actionType
         })
       });
       const payload = await res.json();
@@ -483,12 +485,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }
 
   // ── Render guards ─────────────────────────────────────────────────────────
-  if (error)    return <main className="p-6 text-red-700">{error}</main>;
+  if (error) return <main className="p-6 text-red-700">{error}</main>;
   if (!project) return <main className="p-6"><LoadingSpinner label="Loading production control panel..." /></main>;
 
-  const dr              = project.metrics.daysRemaining;
+  const dr = project.metrics.daysRemaining;
   const overdueTimeline = dr !== null && dr < 0;
-  const delayedStages   = project.stages.filter((s: any) => s.isDelayed);
+  const delayedStages = project.stages.filter((s: any) => s.isDelayed);
 
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
@@ -496,20 +498,20 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
       {/* ── Sticky project header ─────────────────────────────────────────── */}
       <header className="industrial-card sticky top-3 z-20 overflow-hidden rounded-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 md:px-6 md:py-4">
           <div className="min-w-0">
-            <p className="font-mono text-2xl font-black tracking-tight text-slate-900">{project.projectNo}</p>
-            <p className="mt-1 text-sm text-slate-600">{project.equipmentType}</p>
+            <p className="font-mono text-lg font-black tracking-tight text-slate-900 md:text-2xl">{project.projectNo}</p>
+            <p className="mt-0.5 text-xs text-slate-600 md:mt-1 md:text-sm">{project.equipmentType}</p>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold text-slate-900">{project.client?.name ?? project.clientName}</p>
-            <p className="mt-1 font-mono text-sm text-slate-700">{fmtDateTime(project.createdAt)}</p>
+            <p className="text-sm font-bold text-slate-900 md:text-lg">{project.client?.name ?? project.clientName}</p>
+            <p className="mt-0.5 font-mono text-xs text-slate-700 md:mt-1 md:text-sm">{fmtDateTime(project.createdAt)}</p>
           </div>
         </div>
 
-        <div className="border-t border-slate-200 px-6 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="border-t border-slate-200 px-3 py-2 md:px-6 md:py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 md:gap-3">
               <div>
                 <p className="industrial-label">Drawing received</p>
                 <p className="font-mono text-base font-semibold text-slate-900">{fmtDate(project.drawingReceivedDate)}</p>
@@ -634,10 +636,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <td className="px-3 py-2.5 font-mono text-xs text-slate-600">{fmtShortDate(seg.plannedStart)}</td>
                           <td className="px-3 py-2.5 font-mono text-xs text-slate-600">{fmtShortDate(seg.plannedEnd)}</td>
                           <td className="px-3 py-2.5">
-                            {seg.segStatus === "completed"   && <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">✓ Completed</span>}
-                            {seg.segStatus === "delayed"     && <span className="inline-flex items-center gap-1 rounded-full bg-red-100   px-2.5 py-0.5 text-xs font-bold text-red-700">⚠ Delayed</span>}
+                            {seg.segStatus === "completed" && <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">✓ Completed</span>}
+                            {seg.segStatus === "delayed" && <span className="inline-flex items-center gap-1 rounded-full bg-red-100   px-2.5 py-0.5 text-xs font-bold text-red-700">⚠ Delayed</span>}
                             {seg.segStatus === "in_progress" && <span className="inline-flex items-center gap-1 rounded-full bg-blue-100  px-2.5 py-0.5 text-xs font-bold text-blue-700">● In Progress</span>}
-                            {seg.segStatus === "upcoming"    && <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">○ Upcoming</span>}
+                            {seg.segStatus === "upcoming" && <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">○ Upcoming</span>}
                           </td>
                         </tr>
                       ))}
@@ -661,7 +663,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <div className="space-y-1">
                 {/* Legend */}
                 <div className="mb-3 flex flex-wrap items-center gap-3 text-xs font-semibold">
-                  {[["bg-green-500","Completed"],["bg-blue-500","In Progress"],["bg-red-500","Delayed"],["bg-slate-300","Upcoming"]].map(([cls,lbl]) => (
+                  {[["bg-green-500", "Completed"], ["bg-blue-500", "In Progress"], ["bg-red-500", "Delayed"], ["bg-slate-300", "Upcoming"]].map(([cls, lbl]) => (
                     <span key={lbl} className="flex items-center gap-1.5">
                       <span className={`h-2.5 w-6 rounded-sm ${cls}`} />
                       <span className="text-slate-600">{lbl}</span>
@@ -675,100 +677,103 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   )}
                 </div>
 
-                {/* Bars */}
-                <div className="relative">
-                  {/* Today vertical line (spans all rows) */}
-                  {timeline.hasWindow && (
-                    <div
-                      className="pointer-events-none absolute top-0 bottom-8 z-20 w-0.5 bg-red-400"
-                      style={{ left: `calc(9rem + ${timeline.pct}% * (100% - 9rem) / 100)` }}
-                    >
-                      <span className="absolute -top-5 -translate-x-1/2 whitespace-nowrap rounded bg-red-400 px-1 py-0.5 text-[0.6rem] font-bold text-white">Today</span>
-                    </div>
-                  )}
-
-                  {ganttBars.map((bar, i) => {
-                    const sched = plannedSchedule ? plannedSchedule[i] : null;
-                    return (
+                {/* Bars — horizontal scroll on mobile */}
+                <div className="gantt-scroll-container">
+                  <div className="gantt-inner relative">
+                    {/* Today vertical line (spans all rows) */}
+                    {timeline.hasWindow && (
                       <div
-                        key={i}
-                        className="relative mb-1.5 flex items-center gap-2"
-                        onMouseEnter={() => setHoveredGanttIdx(i)}
-                        onMouseLeave={() => setHoveredGanttIdx(null)}
+                        className="pointer-events-none absolute top-0 bottom-8 z-20 w-0.5 bg-red-400"
+                        style={{ left: `calc(9rem + ${timeline.pct}% * (100% - 9rem) / 100)` }}
                       >
-                        {/* Stage label */}
-                        <span className="w-36 shrink-0 text-right text-xs font-semibold text-slate-600 leading-tight">{bar.label}</span>
-
-                        {/* Bar track — overflow-hidden clips bars; tooltip is a sibling outside */}
-                        <div className="relative h-9 flex-1 overflow-hidden rounded-md bg-slate-100">
-                          {/* Segment bar */}
-                          <div
-                            className={`absolute top-1 bottom-1 rounded ${GANTT_COLOURS[bar.segStatus]} opacity-90 transition-all duration-500`}
-                            style={{ left: `${bar.leftPct}%`, width: `${bar.widthPct}%` }}
-                          >
-                            {/* Progress overlay (lighter shade) */}
-                            {bar.progress > 0 && bar.segStatus !== "completed" && (
-                              <div className="absolute left-0 top-0 h-full rounded bg-white/30" style={{ width: `${bar.progress}%` }} />
-                            )}
-                            {/* Progress text */}
-                            <span className="absolute inset-0 flex items-center pl-1.5 text-[0.62rem] font-bold text-white drop-shadow truncate">
-                              {bar.progress > 0 ? `${bar.progress}%` : ""}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* ── Rich hover tooltip ──────────────────────────── */}
-                        {hoveredGanttIdx === i && sched && (
-                          <div className="pointer-events-none absolute bottom-9 left-36 z-30 min-w-52 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl text-xs">
-                            <p className="mb-2 font-bold text-slate-900">{bar.label}</p>
-                            <div className="space-y-1 text-slate-600">
-                              <div className="flex justify-between gap-4">
-                                <span>Planned start</span>
-                                <span className="font-semibold text-slate-800">{fmtShortDate(sched.plannedStart)}</span>
-                              </div>
-                              <div className="flex justify-between gap-4">
-                                <span>Planned end</span>
-                                <span className="font-semibold text-slate-800">{fmtShortDate(sched.plannedEnd)}</span>
-                              </div>
-                              {bar.actualDate && (
-                                <div className="flex justify-between gap-4">
-                                  <span>Actual end</span>
-                                  <span className="font-semibold text-green-600">{fmtShortDate(new Date(bar.actualDate))}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between gap-4">
-                                <span>Progress</span>
-                                <span className={`font-bold ${
-                                  bar.progress >= 100 ? "text-green-600"
-                                  : bar.segStatus === "delayed" ? "text-red-600"
-                                  : "text-blue-600"
-                                }`}>{bar.progress}%</span>
-                              </div>
-                            </div>
-                            {sched.segStatus === "delayed" && (
-                              <p className="mt-2 font-bold text-red-600">⚠ Delayed</p>
-                            )}
-                            {sched.segStatus === "completed" && (
-                              <p className="mt-2 font-bold text-green-600">✓ Completed</p>
-                            )}
-                          </div>
-                        )}
+                        <span className="absolute -top-5 -translate-x-1/2 whitespace-nowrap rounded bg-red-400 px-1 py-0.5 text-[0.6rem] font-bold text-white">Today</span>
                       </div>
-                    );
-                  })}
+                    )}
 
-                  {/* Day axis */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="w-36 shrink-0" />
-                    <div className="flex flex-1 justify-between text-[0.65rem] font-mono text-slate-400">
-                      <span>D1</span>
-                      <span>D{Math.ceil(totalDays / 4)}</span>
-                      <span>D{Math.ceil(totalDays / 2)}</span>
-                      <span>D{Math.ceil(totalDays * 3 / 4)}</span>
-                      <span>D{totalDays}</span>
+                    {ganttBars.map((bar, i) => {
+                      const sched = plannedSchedule ? plannedSchedule[i] : null;
+                      return (
+                        <div
+                          key={i}
+                          className="relative mb-1.5 flex items-center gap-2"
+                          onMouseEnter={() => setHoveredGanttIdx(i)}
+                          onMouseLeave={() => setHoveredGanttIdx(null)}
+                        >
+                          {/* Stage label */}
+                          <span className="w-36 shrink-0 text-right text-xs font-semibold text-slate-600 leading-tight">{bar.label}</span>
+
+                          {/* Bar track — overflow-hidden clips bars; tooltip is a sibling outside */}
+                          <div className="relative h-9 flex-1 overflow-hidden rounded-md bg-slate-100">
+                            {/* Segment bar */}
+                            <div
+                              className={`absolute top-1 bottom-1 rounded ${GANTT_COLOURS[bar.segStatus]} opacity-90 transition-all duration-500`}
+                              style={{ left: `${bar.leftPct}%`, width: `${bar.widthPct}%` }}
+                            >
+                              {/* Progress overlay (lighter shade) */}
+                              {bar.progress > 0 && bar.segStatus !== "completed" && (
+                                <div className="absolute left-0 top-0 h-full rounded bg-white/30" style={{ width: `${bar.progress}%` }} />
+                              )}
+                              {/* Progress text */}
+                              <span className="absolute inset-0 flex items-center pl-1.5 text-[0.62rem] font-bold text-white drop-shadow truncate">
+                                {bar.progress > 0 ? `${bar.progress}%` : ""}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* ── Rich hover tooltip ──────────────────────────── */}
+                          {hoveredGanttIdx === i && sched && (
+                            <div className="pointer-events-none absolute bottom-9 left-36 z-30 min-w-52 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl text-xs">
+                              <p className="mb-2 font-bold text-slate-900">{bar.label}</p>
+                              <div className="space-y-1 text-slate-600">
+                                <div className="flex justify-between gap-4">
+                                  <span>Planned start</span>
+                                  <span className="font-semibold text-slate-800">{fmtShortDate(sched.plannedStart)}</span>
+                                </div>
+                                <div className="flex justify-between gap-4">
+                                  <span>Planned end</span>
+                                  <span className="font-semibold text-slate-800">{fmtShortDate(sched.plannedEnd)}</span>
+                                </div>
+                                {bar.actualDate && (
+                                  <div className="flex justify-between gap-4">
+                                    <span>Actual end</span>
+                                    <span className="font-semibold text-green-600">{fmtShortDate(new Date(bar.actualDate))}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between gap-4">
+                                  <span>Progress</span>
+                                  <span className={`font-bold ${bar.progress >= 100 ? "text-green-600"
+                                      : bar.segStatus === "delayed" ? "text-red-600"
+                                        : "text-blue-600"
+                                    }`}>{bar.progress}%</span>
+                                </div>
+                              </div>
+                              {sched.segStatus === "delayed" && (
+                                <p className="mt-2 font-bold text-red-600">⚠ Delayed</p>
+                              )}
+                              {sched.segStatus === "completed" && (
+                                <p className="mt-2 font-bold text-green-600">✓ Completed</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Day axis */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="w-36 shrink-0" />
+                      <div className="flex flex-1 justify-between text-[0.65rem] font-mono text-slate-400">
+                        <span>D1</span>
+                        <span>D{Math.ceil(totalDays / 4)}</span>
+                        <span>D{Math.ceil(totalDays / 2)}</span>
+                        <span>D{Math.ceil(totalDays * 3 / 4)}</span>
+                        <span>D{totalDays}</span>
+                      </div>
                     </div>
                   </div>
+                  {/* end gantt-inner */}
                 </div>
+                {/* end gantt-scroll-container */}
               </div>
             )}
           </article>
@@ -781,16 +786,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             </h2>
             <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
               {project.stages.map((stage: any) => {
-                const active     = stage.id === selectedStageId;
-                const justSaved  = changedStageId === stage.id;
-                const Icon       = stageIcon(stage.stage.name);
+                const active = stage.id === selectedStageId;
+                const justSaved = changedStageId === stage.id;
+                const Icon = stageIcon(stage.stage.name);
                 return (
                   <button
                     key={stage.id}
                     type="button"
                     onClick={() => selectStage(stage)}
                     className={`flex flex-col rounded-xl border-2 border-l-4 p-4 text-left transition-all duration-200 hover:shadow-md min-h-[120px]
-                      ${active    ? "border-cyan-400 bg-cyan-50 shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"}
+                      ${active ? "border-cyan-400 bg-cyan-50 shadow-sm" : "border-slate-200 bg-white hover:border-slate-300"}
                       ${justSaved ? "ring-2 ring-green-400 ring-offset-2 shadow-lg" : ""}
                       ${statusLeftBorder(stage.status, stage.isDelayed || !!stage.delayReason)}`}
                   >
@@ -826,9 +831,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 {/* KPI strip */}
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: "Total Items",    value: procItems.length,                                         cls: "border-blue-200 bg-blue-50",   txt: "text-blue-700"  },
-                    { label: "Received",       value: procItems.filter((i:any) => i.status==="RECEIVED").length, cls: "border-green-200 bg-green-50", txt: "text-green-700" },
-                    { label: "Pending/Ordered",value: procItems.filter((i:any) => i.status!=="RECEIVED").length, cls: "border-amber-200 bg-amber-50",  txt: "text-amber-700" },
+                    { label: "Total Items", value: procItems.length, cls: "border-blue-200 bg-blue-50", txt: "text-blue-700" },
+                    { label: "Received", value: procItems.filter((i: any) => i.status === "RECEIVED").length, cls: "border-green-200 bg-green-50", txt: "text-green-700" },
+                    { label: "Pending/Ordered", value: procItems.filter((i: any) => i.status !== "RECEIVED").length, cls: "border-amber-200 bg-amber-50", txt: "text-amber-700" },
                   ].map(({ label, value, cls, txt }) => (
                     <div key={label} className={`rounded-xl border p-3 text-center ${cls}`}>
                       <p className="text-[0.67rem] font-bold uppercase tracking-wider text-slate-500">{label}</p>
@@ -838,10 +843,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 {/* Weight summary — admin only */}
-                {me?.role === "ADMIN" && procItems.some((i:any) => i.weightKg) && (
+                {me?.role === "ADMIN" && procItems.some((i: any) => i.weightKg) && (
                   <div className="flex flex-wrap gap-3 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-2 text-sm">
-                    <span className="font-semibold text-emerald-700">Total ordered wt.: <strong>{procItems.reduce((s:number,i:any)=>s+(i.weightKg??0),0).toFixed(1)} kg</strong></span>
-                    <span className="font-semibold text-green-700">Received wt.: <strong>{procItems.filter((i:any)=>i.status==="RECEIVED").reduce((s:number,i:any)=>s+(i.weightKg??0),0).toFixed(1)} kg</strong></span>
+                    <span className="font-semibold text-emerald-700">Total ordered wt.: <strong>{procItems.reduce((s: number, i: any) => s + (i.weightKg ?? 0), 0).toFixed(1)} kg</strong></span>
+                    <span className="font-semibold text-green-700">Received wt.: <strong>{procItems.filter((i: any) => i.status === "RECEIVED").reduce((s: number, i: any) => s + (i.weightKg ?? 0), 0).toFixed(1)} kg</strong></span>
                   </div>
                 )}
 
@@ -856,9 +861,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     <table className="min-w-full text-sm">
                       <thead>
                         <tr className="border-b border-slate-100 bg-slate-50 text-left">
-                          {["Category","Material","Type","Specs","Qty",
-                            ...(me?.role==="ADMIN" ? ["Weight"] : []),
-                            "Status","Date"
+                          {["Category", "Material", "Type", "Specs", "Qty",
+                            ...(me?.role === "ADMIN" ? ["Weight"] : []),
+                            "Status", "Date"
                           ].map(h =>
                             <th key={h} className="px-3 py-2.5 text-[0.67rem] font-bold uppercase tracking-wider text-slate-500">{h}</th>
                           )}
@@ -871,12 +876,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                               className={`border-t border-slate-100 cursor-pointer ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"} ${item.status === "RECEIVED" ? "border-l-4 border-l-green-400" : item.status === "ORDERED" ? "border-l-4 border-l-blue-400" : "border-l-4 border-l-amber-400"}`}
                               onClick={() => setProcExpanded(procExpanded === item.id ? null : item.id)}
                             >
-                              <td className="px-3 py-2.5 text-xs font-bold text-slate-600">{item.category.replace("_"," ")}</td>
+                              <td className="px-3 py-2.5 text-xs font-bold text-slate-600">{item.category.replace("_", " ")}</td>
                               <td className="px-3 py-2.5 font-semibold text-slate-800">{item.materialName}</td>
                               <td className="px-3 py-2.5"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-700">{item.materialType}</span></td>
-                              <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{[item.thickness?`${item.thickness}mm`:null, item.lengthMm&&item.widthMm?`${item.lengthMm}×${item.widthMm}mm`:null].filter(Boolean).join(" · ") || "—"}</td>
+                              <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{[item.thickness ? `${item.thickness}mm` : null, item.lengthMm && item.widthMm ? `${item.lengthMm}×${item.widthMm}mm` : null].filter(Boolean).join(" · ") || "—"}</td>
                               <td className="px-3 py-2.5 font-mono font-bold">{item.quantity} <span className="text-xs font-normal text-slate-400">{item.unit}</span></td>
-                              {me?.role==="ADMIN" && <td className="px-3 py-2.5 font-mono text-xs text-emerald-700">{item.weightKg ? `${item.weightKg} kg` : "—"}</td>}
+                              {me?.role === "ADMIN" && <td className="px-3 py-2.5 font-mono text-xs text-emerald-700">{item.weightKg ? `${item.weightKg} kg` : "—"}</td>}
                               <td className="px-3 py-2.5"><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${item.status === "RECEIVED" ? "bg-green-100 text-green-700" : item.status === "ORDERED" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{item.status}</span></td>
                               <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{new Date(item.createdAt).toLocaleDateString()}</td>
                             </tr>
@@ -942,7 +947,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           .filter(([k]) => k !== "procurementLog")
                           .map(([key, val]) => (
                             <tr key={key} className="border-t border-slate-100 hover:bg-slate-50">
-                              <td className="px-3 py-3 font-medium capitalize text-slate-600">{key.replace(/([A-Z])/g," $1").trim()}</td>
+                              <td className="px-3 py-3 font-medium capitalize text-slate-600">{key.replace(/([A-Z])/g, " $1").trim()}</td>
                               <td className="px-3 py-3 font-medium text-slate-800">{val === true ? "✓ Yes" : val === false ? "✗ No" : String(val ?? "—")}</td>
                               <td className="px-3 py-3 text-xs text-slate-400">—</td>
                             </tr>
@@ -1094,11 +1099,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          id:                    project.id,
-                          updatedAt:             project.updatedAt,
-                          drawingReceivedDate:   iso,
+                          id: project.id,
+                          updatedAt: project.updatedAt,
+                          drawingReceivedDate: iso,
                           productionDurationDays: durationInput,
-                          excludeSundays:        excludeSundaysInput
+                          excludeSundays: excludeSundaysInput
                         })
                       });
                       const payload = await res.json();
@@ -1192,15 +1197,15 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       <p className="industrial-label mb-3">
                         {detailType === "drawing" ? "Drawing Details"
                           : detailType === "machining" ? "Machining Details"
-                          : "Cutting & Bending Details"}
+                            : "Cutting & Bending Details"}
                       </p>
 
                       {detailType === "drawing" && (
                         <div className="space-y-2">
                           {[
                             { key: "designApproval", label: "Design Approval" },
-                            { key: "sorting",        label: "Sorting"         },
-                            { key: "nesting",        label: "Nesting"         }
+                            { key: "sorting", label: "Sorting" },
+                            { key: "nesting", label: "Nesting" }
                           ].map(({ key, label }) => (
                             <label key={key} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 transition-colors hover:bg-slate-50">
                               <input type="checkbox" checked={Boolean(stageDetails[key])}
@@ -1291,7 +1296,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <div>
                             <label className="text-xs font-semibold text-slate-600">Material Type</label>
                             <div className="mt-1.5 flex gap-2">
-                              {(["MS","SS"] as const).map(type => (
+                              {(["MS", "SS"] as const).map(type => (
                                 <button key={type} type="button"
                                   onClick={() => setProcForm(p => ({ ...p, materialType: type }))}
                                   className={`flex-1 rounded-lg border py-2 text-sm font-bold transition-colors ${procForm.materialType === type ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
@@ -1335,7 +1340,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                           <div>
                             <label className="text-xs font-semibold text-slate-600">Action Type</label>
                             <div className="mt-1.5 flex gap-2">
-                              {(["ORDERED","RECEIVED"] as const).map(action => (
+                              {(["ORDERED", "RECEIVED"] as const).map(action => (
                                 <button key={action} type="button"
                                   onClick={() => setProcForm(p => ({ ...p, actionType: action }))}
                                   className={`flex-1 rounded-lg border py-2 text-xs font-bold transition-colors ${procForm.actionType === action ? (action === "ORDERED" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-green-500 bg-green-50 text-green-700") : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
@@ -1367,7 +1372,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                     if (!selectedStage) return;
 
                     // ── 1. Capture stale timestamps BEFORE any optimistic mutation ──
-                    const staleId        = selectedStage.id;
+                    const staleId = selectedStage.id;
                     const staleUpdatedAt = selectedStage.updatedAt;
                     const autoActualDate =
                       quickUpdate.progress >= 100
@@ -1381,12 +1386,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         stages: prev.stages.map((s: any) =>
                           s.id !== staleId ? s : {
                             ...s,
-                            progress:    quickUpdate.progress,
-                            status:      quickUpdate.status,
+                            progress: quickUpdate.progress,
+                            status: quickUpdate.status,
                             delayReason: quickUpdate.delayReason || null,
-                            isDelayed:   !!quickUpdate.delayReason,
-                            actualDate:  autoActualDate ?? s.actualDate,
-                            updatedAt:   new Date().toISOString()
+                            isDelayed: !!quickUpdate.delayReason,
+                            actualDate: autoActualDate ?? s.actualDate,
+                            updatedAt: new Date().toISOString()
                           }
                         )
                       }
@@ -1398,16 +1403,16 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          id:          staleId,
-                          updatedAt:   staleUpdatedAt,   // original server timestamp
-                          progress:    quickUpdate.progress,
-                          status:      quickUpdate.status,
+                          id: staleId,
+                          updatedAt: staleUpdatedAt,   // original server timestamp
+                          progress: quickUpdate.progress,
+                          status: quickUpdate.status,
                           delayReason: quickUpdate.delayReason || null,
                           // Lock actualDate on completion
                           ...(autoActualDate ? { actualDate: autoActualDate } : {}),
                           stageDetails:
                             detailType && detailType !== "procurement" &&
-                            Object.keys(stageDetails).length > 0
+                              Object.keys(stageDetails).length > 0
                               ? stageDetails : null
                         })
                       });
@@ -1486,7 +1491,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
             <Wrench className="h-5 w-5 text-amber-600" /> Electrical Panel Tracking
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">
-              {panels.filter((p:any) => p.status === "COMPLETED").length}/{panels.length} done
+              {panels.filter((p: any) => p.status === "COMPLETED").length}/{panels.length} done
             </span>
           </h2>
           {me?.role === "ADMIN" && (
@@ -1498,7 +1503,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Add form */}
         {panelFormOpen && me?.role === "ADMIN" && (
-          <div className="mb-5 grid gap-3 rounded-xl border border-amber-100 bg-amber-50/40 p-4 md:grid-cols-4">
+          <div className="mb-5 grid gap-3 rounded-xl border border-amber-100 bg-amber-50/40 p-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="industrial-label">Panel Name / ID *</label>
               <input value={panelForm.panelName} onChange={e => setPanelForm(f => ({ ...f, panelName: e.target.value }))} placeholder="e.g. MCC Panel 1"
@@ -1541,8 +1546,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               const colours = panel.status === "COMPLETED"
                 ? { border: "border-green-300", bg: "bg-green-50", badge: "bg-green-100 text-green-700", bar: "bg-green-500" }
                 : panel.status === "IN_PROGRESS"
-                ? { border: "border-blue-300", bg: "bg-blue-50", badge: "bg-blue-100 text-blue-700", bar: "bg-blue-500" }
-                : { border: "border-slate-200", bg: "bg-white", badge: "bg-slate-100 text-slate-600", bar: "bg-slate-300" };
+                  ? { border: "border-blue-300", bg: "bg-blue-50", badge: "bg-blue-100 text-blue-700", bar: "bg-blue-500" }
+                  : { border: "border-slate-200", bg: "bg-white", badge: "bg-slate-100 text-slate-600", bar: "bg-slate-300" };
               return (
                 <div key={panel.id} className={`rounded-xl border-2 ${colours.border} ${colours.bg} p-4 flex flex-col gap-3`}>
                   <div className="flex items-start justify-between gap-2">
@@ -1658,6 +1663,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           ))}
         </div>
       </section>
+
 
       {/* ── Dispatch modal ─────────────────────────────────────────────────── */}
       {confirmDispatch && me?.role === "ADMIN" && (

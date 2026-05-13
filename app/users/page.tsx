@@ -105,9 +105,8 @@ export default function UsersPage() {
         </div>
       </header>
 
-      {toast ? <Toast kind={toast.kind} message={toast.message} /> : null}
+      {toast ? <Toast kind={toast.kind} message={toast.message} onDismiss={() => setToast(null)} /> : null}
 
-      {/* Create user form */}
       <section className="industrial-card rounded-xl p-5">
         <h2 className="mb-4 text-sm font-bold text-slate-900">Create New User</h2>
         <form onSubmit={onCreateUser} className="grid gap-3 md:grid-cols-5">
@@ -181,53 +180,91 @@ export default function UsersPage() {
         {loadingData ? (
           <LoadingSpinner label="Loading users..." />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="erp-table">
-              <thead>
-                <tr>
-                  <th>Email / Login</th>
-                  <th>Role</th>
-                  <th>Client</th>
-                  <th>Created</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td className="font-mono font-medium text-slate-900">{u.email}</td>
-                    <td>
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
-                          u.role === "ADMIN"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                            : "bg-slate-100 text-slate-600 border border-slate-200"
-                        }`}
-                      >
-                        {u.role === "ADMIN" ? <Shield className="h-3 w-3" /> : <User className="h-3 w-3" />}
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="text-slate-600">{u.role === "CLIENT" ? (u.client?.name ?? u.clientName) : "—"}</td>
-                    <td className="font-mono text-slate-500 text-xs">{new Date(u.createdAt).toLocaleString()}</td>
-                    <td>
-                      <button
-                        onClick={() => setDeletingUserId(u.id)}
-                        className="btn-danger text-xs px-3 py-1.5"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {visibleUsers.length === 0 ? (
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="erp-table">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="py-10 text-center text-slate-400">No users match your filters.</td>
+                    <th>Email / Login</th>
+                    <th>Role</th>
+                    <th>Client</th>
+                    <th>Created</th>
+                    <th>Actions</th>
                   </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {visibleUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td className="font-mono font-medium text-slate-900">{u.email}</td>
+                      <td>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                            u.role === "ADMIN"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {u.role === "ADMIN" ? <Shield className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="text-slate-600">{u.role === "CLIENT" ? (u.client?.name ?? u.clientName) : "—"}</td>
+                      <td className="font-mono text-slate-500 text-xs">{new Date(u.createdAt).toLocaleString()}</td>
+                      <td>
+                        <button
+                          onClick={() => setDeletingUserId(u.id)}
+                          className="btn-danger text-xs px-3 py-1.5"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {visibleUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-slate-400">No users match your filters.</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card view */}
+            <div className="block md:hidden space-y-3">
+              {visibleUsers.length === 0 ? (
+                <p className="py-10 text-center text-slate-400">No users match your filters.</p>
+              ) : visibleUsers.map((u) => (
+                <div key={u.id} className="industrial-card rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <p className="font-mono text-sm font-bold text-slate-900 break-all min-w-0">{u.email}</p>
+                    <span className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                      u.role === "ADMIN" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-slate-100 text-slate-600 border border-slate-200"
+                    }`}>
+                      {u.role === "ADMIN" ? <Shield className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                      {u.role}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-3">
+                    <div>
+                      <p className="mobile-card-label">Client</p>
+                      <p className="mobile-card-value">{u.role === "CLIENT" ? (u.client?.name ?? u.clientName) : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="mobile-card-label">Created</p>
+                      <p className="mobile-card-value text-xs font-mono">{new Date(u.createdAt).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setDeletingUserId(u.id)}
+                    className="w-full btn-danger justify-center text-xs"
+                  >
+                    Delete Account
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 

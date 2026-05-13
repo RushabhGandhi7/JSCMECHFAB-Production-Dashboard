@@ -270,51 +270,97 @@ export default function DispatchedPage() {
           </div>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="erp-table">
-            <thead>
-              <tr>
-                <th>Project No</th>
-                <th>Description</th>
-                <th>Client</th>
-                <th>Start Date</th>
-                <th>Dispatch Date</th>
-                <th>Total Days</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map((r) => (
-                <tr key={r.id}>
-                  <td className="font-mono font-bold text-slate-900">{r.projectNo}</td>
-                  <td className="max-w-xs truncate text-slate-700">{r.equipmentType}</td>
-                  <td className="text-slate-700">{r.client?.name ?? r.clientName}</td>
-                  <td className="font-mono text-slate-500">{fmtDate(r.createdAt)}</td>
-                  <td className="font-mono font-semibold text-violet-700">{fmtDate(r.dispatchedAt)}</td>
-                  <td>
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-mono text-sm font-bold text-slate-800">
-                      {r.completionDays !== null ? `${r.completionDays}d` : "—"}
-                    </span>
-                  </td>
-                  <td>
-                    <StatusBadge value={r.status} />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn-icon-danger"
-                      title="Remove to trash"
-                      onClick={() => setConfirmDeleteId(r.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
+        <>
+          {/* Desktop table */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm hidden md:block">
+            <table className="erp-table">
+              <thead>
+                <tr>
+                  <th>Project No</th>
+                  <th>Description</th>
+                  <th>Client</th>
+                  <th>Start Date</th>
+                  <th>Dispatch Date</th>
+                  <th>Total Days</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredRows.map((r) => (
+                  <tr key={r.id}>
+                    <td className="font-mono font-bold text-slate-900">{r.projectNo}</td>
+                    <td className="max-w-xs truncate text-slate-700">{r.equipmentType}</td>
+                    <td className="text-slate-700">{r.client?.name ?? r.clientName}</td>
+                    <td className="font-mono text-slate-500">{fmtDate(r.createdAt)}</td>
+                    <td className="font-mono font-semibold text-violet-700">{fmtDate(r.dispatchedAt)}</td>
+                    <td>
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 font-mono text-sm font-bold text-slate-800">
+                        {r.completionDays !== null ? `${r.completionDays}d` : "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <StatusBadge value={r.status} />
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn-icon-danger"
+                        title="Remove to trash"
+                        onClick={() => setConfirmDeleteId(r.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="block md:hidden space-y-3">
+            {filteredRows.map((r) => (
+              <div key={r.id} className="industrial-card rounded-xl p-4">
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div>
+                    <p className="font-mono text-lg font-black text-slate-900">{r.projectNo}</p>
+                    <p className="text-sm text-slate-600 mt-0.5">{r.equipmentType}</p>
+                  </div>
+                  <StatusBadge value={r.status} />
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <div>
+                    <p className="mobile-card-label">Client</p>
+                    <p className="mobile-card-value">{r.client?.name ?? r.clientName}</p>
+                  </div>
+                  <div>
+                    <p className="mobile-card-label">Dispatch Date</p>
+                    <p className="mobile-card-value font-mono text-violet-700">{fmtDate(r.dispatchedAt)}</p>
+                  </div>
+                  <div>
+                    <p className="mobile-card-label">Start Date</p>
+                    <p className="mobile-card-value font-mono">{fmtDate(r.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="mobile-card-label">Days Taken</p>
+                    <p className="mobile-card-value font-mono">{r.completionDays !== null ? `${r.completionDays}d` : "—"}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    className="btn-icon-danger"
+                    title="Remove to trash"
+                    onClick={() => setConfirmDeleteId(r.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Delete confirmation modal */}

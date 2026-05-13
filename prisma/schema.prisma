@@ -162,31 +162,32 @@ model StageDescription {
 // ── Multi-category Procurement ────────────────────────────────────────────────
 
 model ProcurementItem {
-  id             String              @id @default(cuid())
-  projectId      String
-  category       ProcurementCategory
-  materialName   String
-  materialType   String              @default("MS")  // MS / SS / Others
-  thickness      Float?                               // mm
-  lengthMm       Float?                               // mm
-  widthMm        Float?                               // mm
-  quantity       Float
-  receivedQty    Float               @default(0)
-  unit           String              @default("pcs")  // kg / nos / sheet
-  weightKg       Float?                               // auto-calculated (Sheet Metal)
-  manualWeightKg Float?                               // manual override for other categories
-  isLumpsum      Boolean             @default(false)  // Hardware LS entry
-  ratePerKg      Float?                               // ₹ per kg
-  totalValue     Float?                               // weightKg × ratePerKg
-  vendor         String?
-  notes          String?
-  status         ProcurementStatus   @default(PENDING)
-  isDeleted      Boolean             @default(false)  // soft-delete flag
-  deletedAt      DateTime?                            // when it was soft-deleted
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  project        Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  logs           ProcurementLog[]
+  id               String              @id @default(cuid())
+  projectId        String
+  category         ProcurementCategory
+  materialName     String
+  materialType     String              @default("MS")  // MS / SS / Others
+  thickness        Float?                               // mm
+  lengthMm         Float?                               // mm
+  widthMm          Float?                               // mm
+  quantity         Float
+  receivedQty      Float               @default(0)
+  unit             String              @default("pcs")  // kg / nos / sheet
+  weightKg         Float?                               // auto-calculated (Sheet Metal)
+  manualWeightKg   Float?                               // manual override for other categories
+  isLumpsum        Boolean             @default(false)  // Hardware LS entry
+  ratePerKg        Float?                               // ₹ per kg
+  totalValue       Float?                               // weightKg × ratePerKg
+  vendor           String?
+  notes            String?
+  status           ProcurementStatus   @default(PENDING)
+  addedToInventory Boolean             @default(false)  // prevents double stock-in
+  isDeleted        Boolean             @default(false)  // soft-delete flag
+  deletedAt        DateTime?                            // when it was soft-deleted
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  project          Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  logs             ProcurementLog[]
 
   @@index([projectId])
   @@index([category])
@@ -206,6 +207,7 @@ model ProcurementLog {
   @@index([itemId])
   @@index([createdAt])
 }
+
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -248,6 +250,7 @@ enum ProcurementAction {
   RECEIVED
   UPDATED
 }
+
 
 // ── Electrical Panel Tracking ──────────────────────────────────────────────────
 

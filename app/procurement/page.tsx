@@ -278,14 +278,14 @@ export default function ProcurementPage() {
 
       {/* Header */}
       <header className="industrial-card rounded-xl p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
             <p className="industrial-label">Material Management</p>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900">
               <Package className="h-7 w-7 text-emerald-600" /> Procurement
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <select
               value={selProject}
               onChange={e => {
@@ -295,13 +295,13 @@ export default function ProcurementPage() {
                 if (isAdmin) loadDeletedItems(pid);
                 setForm(f => ({ ...f, projectId: pid }));
               }}
-              className="rounded-lg border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 sm:w-auto"
             >
               <option value="">— Select Project —</option>
               {projects.map(p => <option key={p.id} value={p.id}>{p.projectNo} — {p.client?.name ?? p.clientName}</option>)}
             </select>
             {selProject && isAdmin && (
-              <button onClick={() => setShowForm(v => !v)} className="btn-primary gap-2">
+              <button onClick={() => setShowForm(v => !v)} className="btn-primary gap-2 w-full sm:w-auto justify-center">
                 <Plus className="h-4 w-4" /> Add Item
               </button>
             )}
@@ -698,9 +698,9 @@ export default function ProcurementPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
-              <button type="submit" disabled={saving} className="btn-primary">{saving ? "Saving…" : "Add Item"}</button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary w-full sm:w-auto justify-center">Cancel</button>
+              <button type="submit" disabled={saving} className="btn-primary w-full sm:w-auto justify-center">{saving ? "Saving…" : "Add Item"}</button>
             </div>
           </form>
         </section>
@@ -761,7 +761,70 @@ export default function ProcurementPage() {
                     </div>
                   )}
                 </div>
-                <div className="overflow-x-auto">
+                {/* Mobile card view (hidden on md+) */}
+                <div className="block md:hidden divide-y divide-slate-100">
+                  {catItems.map((item) => (
+                    <div key={item.id} className={`p-4 ${item.status === "PENDING" ? "border-l-4 border-l-amber-400" : item.status === "RECEIVED" ? "border-l-4 border-l-green-400" : "border-l-4 border-l-blue-400"}`}>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 leading-tight">
+                            {item.materialName}
+                            {item.isLumpsum && <span className="ml-1.5 rounded bg-purple-100 px-1 py-0.5 text-[0.6rem] font-bold text-purple-700">LS</span>}
+                          </p>
+                          {item.notes && <p className="text-[0.65rem] text-slate-400 mt-0.5">{item.notes}</p>}
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_COLORS[item.status] ?? "bg-slate-100 text-slate-600"}`}>{item.status}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                        <div>
+                          <p className="mobile-card-label">Category</p>
+                          <p className="mobile-card-value">{CATEGORIES.find(c => c.key === item.category)?.label ?? item.category}</p>
+                        </div>
+                        <div>
+                          <p className="mobile-card-label">Type</p>
+                          <p className="mobile-card-value"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-700">{item.materialType}</span></p>
+                        </div>
+                        <div>
+                          <p className="mobile-card-label">Quantity</p>
+                          <p className="mobile-card-value font-mono">{item.quantity} <span className="text-xs font-normal text-slate-400">{item.unit}</span></p>
+                        </div>
+                        {item.thickness && <div>
+                          <p className="mobile-card-label">Thickness</p>
+                          <p className="mobile-card-value font-mono">{item.thickness}mm</p>
+                        </div>}
+                        {isAdmin && item.weightKg && <div>
+                          <p className="mobile-card-label">Weight</p>
+                          <p className="mobile-card-value font-mono text-emerald-700">{fmt(item.weightKg, 1)} kg</p>
+                        </div>}
+                        <div>
+                          <p className="mobile-card-label">Received</p>
+                          <div className="mt-0.5">
+                            <div className="h-1.5 w-20 rounded-full bg-slate-200">
+                              <div className="h-1.5 rounded-full bg-green-500 transition-all" style={{ width: `${Math.min(100, (item.receivedQty / item.quantity) * 100)}%` }} />
+                            </div>
+                            <p className="mt-0.5 text-[0.6rem] text-slate-500">{item.receivedQty}/{item.quantity}</p>
+                          </div>
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {item.status !== "ORDERED" && (
+                            <button disabled={updatingId === item.id} onClick={() => updateStatus(item.id, "ORDERED")} className="flex-1 rounded-lg border border-blue-200 bg-blue-50 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50">Order</button>
+                          )}
+                          {item.status !== "RECEIVED" && (
+                            <button disabled={updatingId === item.id} onClick={() => updateStatus(item.id, "RECEIVED")} className="flex-1 rounded-lg border border-green-200 bg-green-50 py-2 text-xs font-bold text-green-700 hover:bg-green-100 disabled:opacity-50">Receive</button>
+                          )}
+                          <button onClick={() => setDeleteTarget(item)} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table (hidden on mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50 text-left">
@@ -821,7 +884,6 @@ export default function ProcurementPage() {
                                   <button onClick={() => setExpandedLog(expandedLog === item.id ? null : item.id)} className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[0.65rem] font-bold text-slate-600 hover:bg-slate-100">
                                     {expandedLog === item.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                                   </button>
-                                  {/* Soft-Delete button */}
                                   <button
                                     onClick={() => setDeleteTarget(item)}
                                     title="Delete this item"
